@@ -46,8 +46,20 @@ artifacts/
 └── manifests/           # Manifest JSON files
 tests/
 ├── hostile/             # Hostile input tests
+│   ├── test_hostile_inputs.py
+│   └── test_adversarial.py   # 10x harder adversarial tests
 ├── determinism/         # Determinism tests
-└── replay/              # Replay integrity tests
+│   ├── test_determinism.py
+│   └── test_determinism_hard.py  # Concurrency, hash collision tests
+├── replay/              # Replay integrity tests
+│   ├── test_replay_integrity.py
+│   └── test_replay_hard.py   # Tamper detection edge cases
+├── api/                 # API endpoint tests
+│   └── test_api_endpoints.py
+├── schemas/             # Schema validation tests
+│   └── test_schema_validation.py
+└── invariants/          # Invariant check tests
+    └── test_invariants.py
 docs/
 └── VERASEAL_COMPLETE_DOCUMENTATION.md
 ```
@@ -69,6 +81,14 @@ docs/
 
 ## MVP Rule
 IF payload.assert == true → ACCEPT, else → REJECT
+
+## Test Suite (229 tests total, 8.8x increase from original 26)
+- **Adversarial inputs**: Type coercion, injection attacks, boundary values, malformed JSON
+- **Determinism**: Canonicalization, parallel evaluation, hash collision resistance
+- **Replay**: Tamper detection for input/output/metadata
+- **API endpoints**: All routes tested (health, evaluate, replay, static assets)
+- **Schema validation**: Comprehensive Pydantic v2 tests
+- **Invariants**: Pre/during/post checks
 
 ## Constraints Preserved
 - Evaluation logic: UNCHANGED
