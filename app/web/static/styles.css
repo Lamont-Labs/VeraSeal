@@ -26,47 +26,63 @@ body {
     color: var(--text);
     background: var(--bg-secondary);
     min-height: 100vh;
+    padding-top: 56px;
 }
 
-.container {
-    max-width: 800px;
+.site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 100;
+}
+
+.site-header-inner {
+    max-width: 680px;
     margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.header {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-.header-title {
+    padding: 0 20px;
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
+    gap: 10px;
 }
 
-.header-logo {
-    height: 32px;
+.site-header-logo {
+    height: 24px;
     width: auto;
 }
 
-@media (max-width: 600px) {
-    .header-logo {
-        height: 28px;
-    }
+.site-header-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text);
 }
 
-.header h1 {
-    font-size: 2rem;
+.container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+}
+
+.page-intro {
+    margin-bottom: 32px;
+}
+
+.page-intro h1 {
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--text);
     margin-bottom: 8px;
+    line-height: 1.3;
 }
 
-.header .subtitle {
-    font-size: 1.125rem;
+.page-intro p {
+    font-size: 1rem;
     color: var(--text-secondary);
+    margin: 0;
 }
 
 .card {
