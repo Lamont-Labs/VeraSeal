@@ -3,71 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veritas / Sentinel Core</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        h1 { font-size: 1.5em; }
-        textarea {
-            width: 100%;
-            height: 300px;
-            font-family: monospace;
-            font-size: 14px;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-family: monospace;
-            font-size: 14px;
-            cursor: pointer;
-            background: #333;
-            color: #fff;
-            border: none;
-        }
-        button:hover { background: #555; }
-        .result {
-            margin-top: 20px;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .error { background: #fee; border-color: #c00; }
-        .success { background: #efe; border-color: #0c0; }
-        a { color: #333; }
-    </style>
+    <title>Decision Proof System</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Veritas / Sentinel Core</h1>
-    <p>Deterministic Infrastructure Evaluator</p>
-    
-    <h2>Submit Evaluation Request</h2>
-    <p>Enter JSON matching EvaluationRequest schema:</p>
-    
-    <textarea id="requestInput">{
+    <div class="container">
+        <header class="header">
+            <h1>Decision Proof System</h1>
+            <p class="subtitle">Record decisions. Prove how they were made. Verify them later.</p>
+        </header>
+
+        <div class="card">
+            <h2>What this is</h2>
+            <p>This system evaluates structured information under fixed rules and produces a permanent, verifiable record of the decision.</p>
+            <p>It exists so you can answer: "What happened, why, and can we prove it?"</p>
+        </div>
+
+        <div class="warning-box">
+            <h3>This system does NOT</h3>
+            <ul>
+                <li>Take actions</li>
+                <li>Execute transactions</li>
+                <li>Change external systems</li>
+                <li>Run autonomously</li>
+                <li>Make decisions for you</li>
+            </ul>
+            <p style="margin-top: 12px; margin-bottom: 0;"><strong>It evaluates, records, and proves decisions — nothing more.</strong></p>
+        </div>
+
+        <div class="card">
+            <h2>Who it's for</h2>
+            <p style="margin-bottom: 0;">For teams that need provable decisions: compliance, risk, audit, legal, and regulated operations.</p>
+        </div>
+
+        <div class="card">
+            <h2>How it works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Submit the decision inputs</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">System evaluates under fixed rules</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">A proof bundle is generated and stored</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Replay verifies nothing changed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>What you get</h2>
+            <p>Every evaluation produces a downloadable proof bundle containing:</p>
+            <ul>
+                <li>The exact input you submitted</li>
+                <li>The decision result</li>
+                <li>A step-by-step trace of the evaluation</li>
+                <li>A manifest of file hashes for integrity</li>
+                <li>A replay verification report</li>
+            </ul>
+        </div>
+
+        <div class="card" style="text-align: center; padding: 32px;">
+            <button class="btn btn-primary" onclick="document.getElementById('requestInput').scrollIntoView({ behavior: 'smooth' }); document.getElementById('requestInput').focus();" style="font-size: 1.125rem; padding: 16px 32px;">Generate Decision Proof</button>
+            <p style="margin-top: 12px; margin-bottom: 0;"><a href="#" onclick="loadExample(); return false;" class="nav-link">See an example</a></p>
+        </div>
+
+        <div class="empty-state card">
+            <p><strong>No proof records exist yet.</strong></p>
+            <p style="margin-bottom: 0;">Generate your first decision proof to see the audit trail.</p>
+        </div>
+
+        <div class="card" id="generate-section">
+            <h2>Generate a Decision Proof</h2>
+            <p>Paste structured input (JSON). The system will evaluate it under fixed rules and generate a proof bundle.</p>
+            <p><strong>Same input → same output. Every time.</strong> If anything is missing or unclear, the system stops.</p>
+            
+            <label for="requestInput">Decision Inputs (JSON)</label>
+            <textarea id="requestInput">{
   "version": "v1",
-  "subject": "test-subject",
-  "ruleset": "test-ruleset",
+  "subject": "vendor-onboarding",
+  "ruleset": "policy-check",
   "payload": {
-    "assert": true
+    "assert": true,
+    "vendor_name": "Acme Corp",
+    "requires_nda": true,
+    "country": "US"
   },
-  "injected_time_utc": "2024-01-01T00:00:00Z"
+  "injected_time_utc": "2024-01-15T10:30:00Z"
 }</textarea>
-    
-    <button onclick="submitEvaluation()">Submit Evaluation</button>
-    
-    <div id="result"></div>
-    
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="submitEvaluation()">Generate Proof</button>
+                <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+            </div>
+            
+            <div id="result"></div>
+        </div>
+
+        <div class="card">
+            <h2>Verify an Existing Proof</h2>
+            <p>Enter a Proof ID to verify that the record is unchanged.</p>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <input type="text" id="verifyId" placeholder="Enter Proof ID" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+                <button class="btn btn-secondary" onclick="verifyProof()">Verify Proof</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function loadExample() {
+            document.getElementById('requestInput').value = JSON.stringify({
+                "version": "v1",
+                "subject": "vendor-onboarding",
+                "ruleset": "policy-check",
+                "payload": {
+                    "assert": true,
+                    "vendor_name": "Acme Corp",
+                    "requires_nda": true,
+                    "country": "US"
+                },
+                "injected_time_utc": "2024-01-15T10:30:00Z"
+            }, null, 2);
+            document.getElementById('requestInput').scrollIntoView({ behavior: 'smooth' });
+        }
+
         async function submitEvaluation() {
             const input = document.getElementById('requestInput').value;
             const resultDiv = document.getElementById('result');
@@ -76,8 +142,7 @@
             try {
                 parsed = JSON.parse(input);
             } catch (e) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = 'Invalid JSON: ' + e.message;
+                resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;"><strong>Proof not generated.</strong> The input is not valid JSON.<br><br><code>' + e.message + '</code></div>';
                 return;
             }
             
@@ -91,17 +156,25 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = '<strong>Evaluation ID:</strong> ' + data.evaluation_id + 
-                        '\n\n<a href="/evaluations/' + data.evaluation_id + '">View Evaluation Details</a>' +
-                        '\n\n<strong>Full Result:</strong>\n' + JSON.stringify(data.result, null, 2);
+                    resultDiv.innerHTML = '<div class="result-box result-success" style="margin-top: 16px;">' +
+                        '<strong>Decision Proof Generated</strong><br><br>' +
+                        '<span class="proof-id">' + data.evaluation_id + '</span><br><br>' +
+                        '<a href="/evaluations/' + data.evaluation_id + '" class="btn btn-primary">View Proof Record</a>' +
+                        '</div>';
                 } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.textContent = 'Error: ' + JSON.stringify(data, null, 2);
+                    resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;">' +
+                        '<strong>Proof not generated.</strong> The input is invalid or incomplete.<br><br>' +
+                        '<code>' + (data.detail || JSON.stringify(data)) + '</code></div>';
                 }
             } catch (e) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = 'Request failed: ' + e.message;
+                resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;"><strong>Request failed.</strong><br>' + e.message + '</div>';
+            }
+        }
+
+        function verifyProof() {
+            const proofId = document.getElementById('verifyId').value.trim();
+            if (proofId) {
+                window.location.href = '/replay/' + proofId;
             }
         }
     </script>

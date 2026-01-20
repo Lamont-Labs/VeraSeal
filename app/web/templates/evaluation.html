@@ -3,125 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluation {{ evaluation_id }}</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        h1 { font-size: 1.5em; word-break: break-all; }
-        h2 { font-size: 1.2em; margin-top: 20px; }
-        .hash {
-            background: #fff;
-            padding: 5px 10px;
-            border: 1px solid #ccc;
-            word-break: break-all;
-        }
-        .links { margin-top: 20px; }
-        .links a {
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            background: #333;
-            color: #fff;
-            text-decoration: none;
-        }
-        .links a:hover { background: #555; }
-        pre {
-            background: #fff;
-            padding: 10px;
-            border: 1px solid #ccc;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .decision-accept { color: #080; font-weight: bold; }
-        .decision-reject { color: #800; font-weight: bold; }
-        a { color: #333; }
-    </style>
+    <title>Decision Proof - {{ evaluation_id }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <p><a href="/">&larr; Back to Home</a></p>
-    
-    <h1>Evaluation: {{ evaluation_id }}</h1>
-    
-    {% if output %}
-    <h2>Decision</h2>
-    <p class="{% if output.decision == 'ACCEPT' %}decision-accept{% else %}decision-reject{% endif %}">
-        {{ output.decision }}
-    </p>
-    
-    <h2>Reasons</h2>
-    <ul>
-    {% for reason in output.reasons %}
-        <li>{{ reason }}</li>
-    {% endfor %}
-    </ul>
-    {% endif %}
-    
-    <h2>Hashes</h2>
-    {% if metadata %}
-    <p><strong>Input SHA-256:</strong></p>
-    <div class="hash">{{ metadata.input_sha256 }}</div>
-    
-    <p><strong>Output SHA-256:</strong></p>
-    <div class="hash">{{ metadata.output_sha256 }}</div>
-    
-    <p><strong>Trace SHA-256:</strong></p>
-    <div class="hash">{{ metadata.trace_sha256 }}</div>
-    
-    <p><strong>Manifest SHA-256:</strong></p>
-    <div class="hash">{{ metadata.manifest_sha256 }}</div>
-    {% endif %}
-    
-    <h2>Metadata</h2>
-    {% if metadata %}
-    <p><strong>Subject:</strong> {{ metadata.subject }}</p>
-    <p><strong>Ruleset:</strong> {{ metadata.ruleset }}</p>
-    <p><strong>Created (injected):</strong> {{ metadata.injected_time_utc }}</p>
-    {% endif %}
-    
-    <h2>Downloads</h2>
-    <div class="links">
-        <a href="/evaluations/{{ evaluation_id }}/input">input.json</a>
-        <a href="/evaluations/{{ evaluation_id }}/output">output.json</a>
-        <a href="/evaluations/{{ evaluation_id }}/trace">trace.json</a>
-        <a href="/evaluations/{{ evaluation_id }}/meta">metadata.json</a>
-        <a href="/evaluations/{{ evaluation_id }}/manifest">manifest.json</a>
-        <a href="/evaluations/{{ evaluation_id }}/bundle">Download ZIP Bundle</a>
+    <div class="container">
+        <a href="/" class="nav-link back-link">&larr; Back to Home</a>
+        
+        <header class="header">
+            <h1>Decision Proof Generated</h1>
+            <p class="subtitle">This record can be replayed later to verify nothing changed.</p>
+        </header>
+
+        <div class="card">
+            <h2>Proof ID</h2>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="proof-id">{{ evaluation_id }}</span>
+                <button class="btn btn-secondary" onclick="copyProofId()" style="padding: 6px 12px; font-size: 0.875rem;">Copy</button>
+            </div>
+        </div>
+
+        {% if output %}
+        <div class="card">
+            <h2>Decision Result</h2>
+            <p class="{% if output.decision == 'ACCEPT' %}decision-accept{% else %}decision-reject{% endif %}">
+                {{ output.decision }}
+            </p>
+            <p style="margin-top: 8px; color: var(--text-secondary);">
+                {% for reason in output.reasons %}
+                    {{ reason }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </p>
+            
+            <div class="collapsible">
+                <button class="collapsible-toggle" onclick="toggleRaw('rawOutput')">Show raw result</button>
+                <div id="rawOutput" class="collapsible-content">
+                    <pre>{{ output | tojson(indent=2) }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if metadata %}
+        <div class="card">
+            <h2>Proof Details</h2>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="info-label">Subject</span>
+                    <span class="info-value">{{ metadata.subject }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ruleset</span>
+                    <span class="info-value">{{ metadata.ruleset }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Recorded At</span>
+                    <span class="info-value">{{ metadata.injected_time_utc }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Integrity Hashes</h2>
+            <p style="margin-bottom: 12px;">These cryptographic fingerprints verify the proof has not been altered.</p>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="info-label">Input Hash</span>
+                    <span class="info-value hash">{{ metadata.input_sha256 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Output Hash</span>
+                    <span class="info-value hash">{{ metadata.output_sha256 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Manifest Hash</span>
+                    <span class="info-value hash">{{ metadata.manifest_sha256 }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h2>Download Proof Bundle</h2>
+            <p>Download individual files or the complete proof bundle.</p>
+            <div class="downloads-grid">
+                <a href="/evaluations/{{ evaluation_id }}/input">Input</a>
+                <a href="/evaluations/{{ evaluation_id }}/output">Result</a>
+                <a href="/evaluations/{{ evaluation_id }}/trace">Trace</a>
+                <a href="/evaluations/{{ evaluation_id }}/meta">Metadata</a>
+                <a href="/evaluations/{{ evaluation_id }}/manifest">Manifest</a>
+            </div>
+            <div style="margin-top: 16px;">
+                <a href="/evaluations/{{ evaluation_id }}/bundle" class="btn btn-primary">Download Complete Bundle (ZIP)</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Verify Proof</h2>
+            <p>Re-run the evaluation to confirm the proof record is unchanged.</p>
+            <div class="btn-group">
+                <a href="/replay/{{ evaluation_id }}" class="btn btn-secondary">Verify This Proof</a>
+            </div>
+        </div>
     </div>
-    
-    <h2>Replay Verification</h2>
-    <div class="links">
-        <a href="/replay/{{ evaluation_id }}">Run Replay Verification</a>
-    </div>
-    
-    <button onclick="runReplay()">Verify Determinism (API)</button>
-    <div id="replayResult"></div>
-    
+
     <script>
-        async function runReplay() {
-            const resultDiv = document.getElementById('replayResult');
-            try {
-                const response = await fetch('/replay/{{ evaluation_id }}', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                if (data.replay_ok) {
-                    resultDiv.innerHTML = '<pre style="background:#efe;border-color:#0c0;">Replay OK - Determinism verified</pre>';
-                } else {
-                    resultDiv.innerHTML = '<pre style="background:#fee;border-color:#c00;">Replay FAILED\n\nMismatches:\n' + 
-                        data.mismatches.join('\n') + '</pre>';
-                }
-            } catch (e) {
-                resultDiv.innerHTML = '<pre style="background:#fee;">Error: ' + e.message + '</pre>';
-            }
+        function copyProofId() {
+            navigator.clipboard.writeText('{{ evaluation_id }}');
+            alert('Proof ID copied to clipboard');
+        }
+
+        function toggleRaw(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('show');
         }
     </script>
 </body>

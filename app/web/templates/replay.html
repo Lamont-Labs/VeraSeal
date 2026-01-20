@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Replay {{ evaluation_id }}</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        h1 { font-size: 1.5em; word-break: break-all; }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border: 2px solid;
-        }
-        .ok { background: #efe; border-color: #0c0; }
-        .fail { background: #fee; border-color: #c00; }
-        a { color: #333; }
-    </style>
+    <title>Verify Proof - {{ evaluation_id }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <p><a href="/">&larr; Back to Home</a></p>
-    <p><a href="/evaluations/{{ evaluation_id }}">&larr; Back to Evaluation</a></p>
-    
-    <h1>Replay Verification: {{ evaluation_id }}</h1>
-    
-    {% if result.replay_ok %}
-    <div class="result ok">
-        <h2>REPLAY OK</h2>
-        <p>Determinism verified. Re-running the evaluation produced identical hashes.</p>
+    <div class="container">
+        <a href="/" class="nav-link back-link">&larr; Back to Home</a>
+        <a href="/evaluations/{{ evaluation_id }}" class="nav-link back-link">&larr; Back to Proof Record</a>
+        
+        <header class="header">
+            <h1>Verify Proof Record</h1>
+            <p class="subtitle">This re-runs the evaluation using the stored input and confirms the output hashes match.</p>
+        </header>
+
+        <div class="card">
+            <h2>Proof ID</h2>
+            <span class="proof-id">{{ evaluation_id }}</span>
+        </div>
+
+        {% if result.replay_ok %}
+        <div class="status-verified">
+            <h2>Verified</h2>
+            <p style="margin-top: 8px; color: var(--success);">The proof record is unchanged. Re-running the evaluation produced identical results.</p>
+        </div>
+        {% else %}
+        <div class="status-failed">
+            <h2>Verification Failed</h2>
+            <p style="margin-top: 8px;">Something does not match. The proof record may have been altered.</p>
+            
+            <div style="margin-top: 16px;">
+                <h3>Mismatches Detected:</h3>
+                <ul style="margin-top: 8px;">
+                {% for mismatch in result.mismatches %}
+                    <li style="color: var(--error);">{{ mismatch }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card" style="margin-top: 24px;">
+            <div class="btn-group">
+                <a href="/evaluations/{{ evaluation_id }}" class="btn btn-secondary">View Proof Record</a>
+                <a href="/" class="btn btn-secondary">Generate New Proof</a>
+            </div>
+        </div>
     </div>
-    {% else %}
-    <div class="result fail">
-        <h2>REPLAY FAILED</h2>
-        <p>Determinism check failed. The following mismatches were detected:</p>
-        <ul>
-        {% for mismatch in result.mismatches %}
-            <li>{{ mismatch }}</li>
-        {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
 </body>
 </html>
