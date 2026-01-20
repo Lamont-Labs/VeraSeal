@@ -25,6 +25,7 @@
 
         {% if output %}
         <div class="card">
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">This proof can be replayed later to confirm nothing has changed.</p>
             <h2>Decision Result</h2>
             <p class="{% if output.decision == 'ACCEPT' %}decision-accept{% else %}decision-reject{% endif %}">
                 {{ output.decision }}

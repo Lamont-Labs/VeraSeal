@@ -82,8 +82,12 @@
         </div>
 
         <div class="card" id="generate-section">
-            <h2>Decision Details (Structured Format)</h2>
-            <p>This represents the exact information reviewed at the time the decision was made. The structure ensures nothing is ambiguous.</p>
+            <h2>What this tool does</h2>
+            <p>This tool records a decision and produces a permanent proof showing what was reviewed, what rules were applied, and why the outcome occurred.</p>
+            <p><small>No actions are taken. Nothing is automated. This system evaluates and records only.</small></p>
+            
+            <h2 style="margin-top: 24px;">Decision Details (Structured Format)</h2>
+            <p>Paste the exact information that was reviewed when the decision was made.</p>
             
             <label for="requestInput">Decision Details (Structured Format)</label>
             <textarea id="requestInput">{
@@ -98,10 +102,11 @@
   },
   "injected_time_utc": "2024-01-15T10:30:00Z"
 }</textarea>
+            <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.875rem;">The same input will always produce the same proof.</p>
 
             <div class="btn-group">
-                <button class="btn btn-primary" onclick="submitEvaluation()">Generate Decision Proof</button>
-                <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+                <button class="btn btn-primary" onclick="submitEvaluation()">Generate decision proof</button>
+                <button class="btn btn-secondary" onclick="loadExample()">Load a real example</button>
             </div>
             <p style="margin-top: 12px; color: var(--text-secondary); font-size: 0.875rem;">This creates a permanent, verifiable record of the decision.</p>
             
