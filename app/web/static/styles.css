@@ -39,6 +39,34 @@ body {
     margin-bottom: 40px;
 }
 
+.header-hero {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.header-hero-logo {
+    max-width: 120px;
+    height: auto;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.header-logo {
+    height: 32px;
+    width: auto;
+}
+
+@media (max-width: 600px) {
+    .header-logo {
+        height: 28px;
+    }
+}
+
 .header h1 {
     font-size: 2rem;
     font-weight: 700;
