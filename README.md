@@ -1,6 +1,6 @@
-# Veritas / Sentinel Core
+# VeraSeal
 
-Deterministic Infrastructure Evaluator
+VeraSeal is a deterministic evaluator that records decisions with verifiable proof.
 
 ## Overview
 

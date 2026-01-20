@@ -1,4 +1,4 @@
-# PROOF.md - Veritas / Sentinel Core
+# PROOF.md - VeraSeal
 
 ## Determinism Guarantees
 

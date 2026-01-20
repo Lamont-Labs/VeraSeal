@@ -1,7 +1,7 @@
-# Veritas / Sentinel Core
+# VeraSeal
 
 ## Overview
-Deterministic Infrastructure Evaluator - a strict, append-only evaluation system with cryptographic provenance.
+VeraSeal is a deterministic evaluator that records decisions with verifiable proof. It is a strict, append-only evaluation system with cryptographic provenance.
 
 ## Project Status
 **Complete MVP** - All features implemented and tested.

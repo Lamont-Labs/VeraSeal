@@ -18,8 +18,8 @@ from app.invariants.checks import verify_artifacts_dir_writable
 ARTIFACTS_BASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts")
 
 app = FastAPI(
-    title="Veritas / Sentinel Core",
-    description="Deterministic Infrastructure Evaluator",
+    title="VeraSeal",
+    description="Deterministic evaluator that records decisions with verifiable proof",
     version="1.0.0",
 )
 
