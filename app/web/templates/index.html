@@ -13,11 +13,26 @@
     <div class="container">
         <header class="header">
             <h1>VeraSeal</h1>
-            <p class="subtitle">Record decisions. Prove how they were made. Verify them later.</p>
+            <p class="hero-statement">This tool is built for teams that must be able to prove how and why an important decision was made — long after the moment has passed.</p>
         </header>
 
-        <div class="card">
-            <p>This system creates permanent, tamper-evident records of important decisions. It exists so you can answer: What happened, why, and can we prove it?</p>
+        <div class="card audience-card">
+            <h2>Who This Is For</h2>
+            <ul>
+                <li>Teams responsible for decisions that must stand up to audits, reviews, or legal scrutiny</li>
+                <li>Organizations that need to prove <em>why</em> a decision was made, not just <em>what</em> was decided</li>
+                <li>Regulated or high-stakes environments: compliance, risk, legal, governance</li>
+            </ul>
+        </div>
+
+        <div class="card audience-card audience-not">
+            <h2>Who This Is NOT For</h2>
+            <ul>
+                <li>If you want decisions automated, this is not for you</li>
+                <li>If you've never had to explain a past decision under scrutiny, this is not for you</li>
+                <li>If you're looking for analytics, optimization, or recommendations, this is not for you</li>
+            </ul>
+            <p class="firm-statement">This system exists to record and prove decisions — nothing more.</p>
         </div>
 
         <div class="card">
@@ -30,46 +45,6 @@
                 <li>The decision result</li>
                 <li>Proof the record has not been altered</li>
             </ul>
-        </div>
-
-        <div class="warning-box">
-            <h3>This system does NOT</h3>
-            <ul>
-                <li>Take actions</li>
-                <li>Execute transactions</li>
-                <li>Change external systems</li>
-                <li>Run autonomously</li>
-                <li>Make decisions for you</li>
-            </ul>
-            <p style="margin-top: 12px; margin-bottom: 0;"><strong>It evaluates, records, and proves decisions — nothing more.</strong></p>
-        </div>
-
-        <div class="card">
-            <h2>Who it's for</h2>
-            <p style="margin-bottom: 0;">Teams responsible for decisions that must hold up under review — including compliance, risk, audit, legal, and regulated operations.</p>
-        </div>
-
-        <div class="card">
-            <h2>How it works</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-text">Submit the decision details</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-text">System evaluates under fixed rules</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-text">A proof bundle is generated and stored</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-text">Replay verifies nothing changed</div>
-                </div>
-            </div>
-            <p style="margin-top: 16px; margin-bottom: 0; text-align: center;">The same input will always produce the same result.</p>
         </div>
 
         <div class="card">
@@ -98,11 +73,7 @@
         </div>
 
         <div class="card" id="generate-section">
-            <h2>What this tool does</h2>
-            <p>This tool records a decision and produces a permanent proof showing what was reviewed, what rules were applied, and why the outcome occurred.</p>
-            <p><small>No actions are taken. Nothing is automated. This system evaluates and records only.</small></p>
-            
-            <h2 style="margin-top: 24px;">Decision Details (Structured Format)</h2>
+            <h2>Generate a Decision Proof</h2>
             <p>Paste the exact information that was reviewed when the decision was made.</p>
             
             <label for="requestInput">Decision Details (Structured Format)</label>
@@ -124,7 +95,6 @@
                 <button class="btn btn-primary" onclick="submitEvaluation()">Generate decision proof</button>
                 <button class="btn btn-secondary" onclick="loadExample()">Load a real example</button>
             </div>
-            <p style="margin-top: 12px; color: var(--text-secondary); font-size: 0.875rem;">This creates a permanent, verifiable record of the decision.</p>
             
             <div id="result"></div>
         </div>
