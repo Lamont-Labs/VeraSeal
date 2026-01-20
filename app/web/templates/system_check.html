@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeraSeal - System Self-Test</title>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/assets/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/assets/favicon-16x16.png">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="nav-link back-link">&larr; Back to Home</a>
+        
+        <header class="header">
+            <h1>System Self-Test</h1>
+            <p class="subtitle">Deterministic integrity verification</p>
+        </header>
+
+        <div class="card self-test-card">
+            {% if all_pass %}
+            <div class="test-result test-pass">
+                <h2>PASS</h2>
+            </div>
+            {% else %}
+            <div class="test-result test-fail">
+                <h2>FAIL</h2>
+            </div>
+            {% endif %}
+
+            <div class="test-checks">
+                <div class="test-check">
+                    <span class="check-status {% if checks.schema_valid %}check-pass{% else %}check-fail{% endif %}">
+                        {% if checks.schema_valid %}&#10003;{% else %}&#10007;{% endif %}
+                    </span>
+                    <span>Schema Validity</span>
+                </div>
+                <div class="test-check">
+                    <span class="check-status {% if checks.hash_determinism %}check-pass{% else %}check-fail{% endif %}">
+                        {% if checks.hash_determinism %}&#10003;{% else %}&#10007;{% endif %}
+                    </span>
+                    <span>Hash Determinism</span>
+                </div>
+                <div class="test-check">
+                    <span class="check-status {% if checks.replay_integrity %}check-pass{% else %}check-fail{% endif %}">
+                        {% if checks.replay_integrity %}&#10003;{% else %}&#10007;{% endif %}
+                    </span>
+                    <span>Replay Integrity</span>
+                </div>
+            </div>
+
+            <p style="margin-top: 24px; color: var(--text-secondary); font-size: 0.875rem;">
+                This test verifies that the system produces deterministic results with no side effects.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

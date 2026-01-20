@@ -10,10 +10,71 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+    <div id="walkthrough-overlay" class="walkthrough-overlay" style="display: none;">
+        <div class="walkthrough-modal">
+            <div class="walkthrough-step" data-step="1">
+                <h2>Welcome to VeraSeal</h2>
+                <p class="walkthrough-text">VeraSeal records decisions. It does not make them.</p>
+                <div class="walkthrough-nav">
+                    <span class="walkthrough-dots">
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </span>
+                    <button class="btn btn-primary" onclick="nextWalkthroughStep()">Next</button>
+                </div>
+            </div>
+            <div class="walkthrough-step" data-step="2" style="display: none;">
+                <h2>You Provide the Inputs</h2>
+                <p class="walkthrough-text">You provide the inputs. VeraSeal produces proof.</p>
+                <div class="walkthrough-nav">
+                    <span class="walkthrough-dots">
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </span>
+                    <button class="btn btn-secondary" onclick="prevWalkthroughStep()">Back</button>
+                    <button class="btn btn-primary" onclick="nextWalkthroughStep()">Next</button>
+                </div>
+            </div>
+            <div class="walkthrough-step" data-step="3" style="display: none;">
+                <h2>Permanent Records</h2>
+                <p class="walkthrough-text">Once recorded, decisions cannot be changed.</p>
+                <div class="walkthrough-nav">
+                    <span class="walkthrough-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                    </span>
+                    <button class="btn btn-secondary" onclick="prevWalkthroughStep()">Back</button>
+                    <button class="btn btn-primary" onclick="nextWalkthroughStep()">Next</button>
+                </div>
+            </div>
+            <div class="walkthrough-step" data-step="4" style="display: none;">
+                <h2>Verify Anytime</h2>
+                <p class="walkthrough-text">You can replay and verify every decision.</p>
+                <div class="walkthrough-nav">
+                    <span class="walkthrough-dots">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot active"></span>
+                    </span>
+                    <button class="btn btn-secondary" onclick="prevWalkthroughStep()">Back</button>
+                    <button class="btn btn-primary" onclick="dismissWalkthrough()">Get Started</button>
+                </div>
+            </div>
+            <button class="walkthrough-dismiss" onclick="dismissWalkthrough()">Skip</button>
+        </div>
+    </div>
+
     <div class="container">
         <header class="header">
             <h1>VeraSeal</h1>
-            <p class="hero-statement">This tool is built for teams that must be able to prove how and why an important decision was made — long after the moment has passed.</p>
+            <p class="hero-statement">This system is for teams that need to prove decisions after the fact. If you are looking for analytics, optimization, or AI recommendations, this is not the right tool.</p>
         </header>
 
         <div class="card audience-card">
@@ -35,68 +96,104 @@
             <p class="firm-statement">This system exists to record and prove decisions — nothing more.</p>
         </div>
 
-        <div class="card">
-            <h2>Example: Vendor Approval</h2>
-            <p>A compliance team approves a new vendor. Months or years later, an auditor asks why the vendor was approved and what rules were applied at the time.</p>
-            <p>This system produces a permanent record showing:</p>
-            <ul>
-                <li>The exact information reviewed</li>
-                <li>The rules applied</li>
-                <li>The decision result</li>
-                <li>Proof the record has not been altered</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h2>Getting Started</h2>
-            <p>Follow these steps to create your first decision proof:</p>
-            <ol style="margin: 16px 0; padding-left: 20px; line-height: 2;">
-                <li><strong>Find the form below</strong> — This is where you enter the decision details.</li>
-                <li><strong>Load sample data or enter your own</strong> — Click "Load a real example" to see how the input should look. You can modify it or replace it with your own information.</li>
-                <li><strong>Click "Generate decision proof"</strong> — The system will evaluate your input and create a permanent record. This happens instantly.</li>
-                <li><strong>Save your Proof ID</strong> — You'll receive a unique ID for your record. Keep this safe. You'll need it to verify the record later or download the proof bundle.</li>
-                <li><strong>Verify anytime</strong> — Return later and enter your Proof ID in the "Verify an Existing Proof" section. The system will confirm whether the record has changed.</li>
-            </ol>
-            <p style="margin-top: 12px; margin-bottom: 0;"><strong>Why this matters:</strong> Once created, your proof cannot be altered. If anyone asks what was decided and why, you have a permanent, verifiable answer.</p>
-        </div>
-
-        <div class="card">
-            <h2>What you get</h2>
-            <p>Every evaluation produces a downloadable proof bundle containing:</p>
-            <ul>
-                <li>The exact input you submitted</li>
-                <li>The decision result</li>
-                <li>A step-by-step trace of the evaluation</li>
-                <li>A manifest of file hashes for integrity</li>
-                <li>A replay verification report</li>
-            </ul>
-        </div>
-
         <div class="card" id="generate-section">
             <h2>Generate a Decision Proof</h2>
-            <p>Paste the exact information that was reviewed when the decision was made.</p>
-            
-            <label for="requestInput">Decision Details (Structured Format)</label>
-            <textarea id="requestInput">{
+            <p>Fill out the form to record a decision with permanent, verifiable proof.</p>
+
+            <div class="template-selector">
+                <label>Start with a template (optional):</label>
+                <div class="template-buttons">
+                    <button type="button" class="template-btn" onclick="loadTemplate('vendor')">Vendor Approval</button>
+                    <button type="button" class="template-btn" onclick="loadTemplate('policy')">Policy Exception</button>
+                    <button type="button" class="template-btn" onclick="loadTemplate('risk')">Risk Acceptance</button>
+                    <button type="button" class="template-btn" onclick="loadTemplate('access')">Access Approval</button>
+                    <button type="button" class="template-btn template-btn-clear" onclick="clearForm()">Clear Form</button>
+                </div>
+            </div>
+
+            <form id="decisionForm" class="decision-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="subject">Decision Subject <span class="required">*</span></label>
+                    <input type="text" id="subject" name="subject" required maxlength="128" placeholder="e.g., vendor-onboarding, access-request, policy-exception">
+                    <span class="helper-text">What is being decided? Use a short identifier.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="ruleset">Ruleset Name <span class="required">*</span></label>
+                    <input type="text" id="ruleset" name="ruleset" required maxlength="128" placeholder="e.g., policy-check, security-review, compliance-audit">
+                    <span class="helper-text">Which rules or policy are being applied?</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="timestamp">Decision Timestamp (UTC) <span class="required">*</span></label>
+                    <input type="text" id="timestamp" name="timestamp" required placeholder="2024-01-15T10:30:00Z">
+                    <span class="helper-text">When the decision was made. Format: YYYY-MM-DDTHH:MM:SSZ</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Decision Condition <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="assert" value="true" checked>
+                            <span>Approve (assert = true)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="assert" value="false">
+                            <span>Reject (assert = false)</span>
+                        </label>
+                    </div>
+                    <span class="helper-text">The decision outcome. ACCEPT if true, REJECT if false.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Decision Context</label>
+                    <div id="contextFields" class="context-fields">
+                        <div class="context-row">
+                            <input type="text" class="context-key" placeholder="Field name">
+                            <input type="text" class="context-value" placeholder="Value">
+                            <button type="button" class="btn-icon" onclick="removeContextRow(this)">-</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="addContextRow()">+ Add Context Field</button>
+                    <span class="helper-text">Additional information about the decision (optional).</span>
+                </div>
+
+                <div class="form-divider"></div>
+
+                <div class="form-group">
+                    <label>Generated Request (Read-Only)</label>
+                    <pre id="generatedJson" class="generated-json"></pre>
+                    <span class="helper-text">This is the exact data that will be submitted.</span>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="submitForm()">Generate Decision Proof</button>
+                </div>
+            </form>
+
+            <div id="result"></div>
+
+            <div class="advanced-toggle">
+                <button class="collapsible-toggle" onclick="toggleAdvanced()">Advanced / System Integration</button>
+                <p class="toggle-hint">For system integrations, auditors, and advanced users</p>
+            </div>
+
+            <div id="advancedMode" class="advanced-mode" style="display: none;">
+                <label for="requestInput">Raw JSON Input</label>
+                <textarea id="requestInput">{
   "version": "v1",
   "subject": "vendor-onboarding",
   "ruleset": "policy-check",
   "payload": {
     "assert": true,
-    "vendor_name": "Acme Corp",
-    "requires_nda": true,
-    "country": "US"
+    "vendor_name": "Acme Corp"
   },
   "injected_time_utc": "2024-01-15T10:30:00Z"
 }</textarea>
-            <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.875rem;">The same input will always produce the same proof.</p>
-
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="submitEvaluation()">Generate decision proof</button>
-                <button class="btn btn-secondary" onclick="loadExample()">Load a real example</button>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="submitRawJson()">Submit Raw JSON</button>
+                </div>
             </div>
-            
-            <div id="result"></div>
         </div>
 
         <div class="card">
@@ -107,46 +204,222 @@
                 <button class="btn btn-secondary" onclick="verifyProof()">Verify Proof</button>
             </div>
         </div>
+
+        <div class="card system-links">
+            <a href="/system-check" class="nav-link">System Self-Test</a>
+        </div>
     </div>
 
     <script>
-        function loadExample() {
-            document.getElementById('requestInput').value = JSON.stringify({
-                "version": "v1",
-                "subject": "vendor-onboarding",
-                "ruleset": "policy-check",
-                "payload": {
-                    "assert": true,
-                    "vendor_name": "Acme Corp",
-                    "requires_nda": true,
-                    "country": "US"
-                },
-                "injected_time_utc": "2024-01-15T10:30:00Z"
-            }, null, 2);
-            document.getElementById('requestInput').scrollIntoView({ behavior: 'smooth' });
+        let currentWalkthroughStep = 1;
+
+        function initPage() {
+            incrementCounter('page_views');
+            if (!localStorage.getItem('veraseal_walkthrough_dismissed')) {
+                document.getElementById('walkthrough-overlay').style.display = 'flex';
+            }
+            setDefaultTimestamp();
+            updateGeneratedJson();
+            document.getElementById('subject').addEventListener('input', updateGeneratedJson);
+            document.getElementById('ruleset').addEventListener('input', updateGeneratedJson);
+            document.getElementById('timestamp').addEventListener('input', updateGeneratedJson);
+            document.querySelectorAll('input[name="assert"]').forEach(r => r.addEventListener('change', updateGeneratedJson));
         }
 
-        async function submitEvaluation() {
+        function incrementCounter(name) {
+            const key = 'veraseal_counter_' + name;
+            const current = parseInt(localStorage.getItem(key) || '0', 10);
+            localStorage.setItem(key, (current + 1).toString());
+        }
+
+        function nextWalkthroughStep() {
+            document.querySelector(`.walkthrough-step[data-step="${currentWalkthroughStep}"]`).style.display = 'none';
+            currentWalkthroughStep++;
+            document.querySelector(`.walkthrough-step[data-step="${currentWalkthroughStep}"]`).style.display = 'block';
+        }
+
+        function prevWalkthroughStep() {
+            document.querySelector(`.walkthrough-step[data-step="${currentWalkthroughStep}"]`).style.display = 'none';
+            currentWalkthroughStep--;
+            document.querySelector(`.walkthrough-step[data-step="${currentWalkthroughStep}"]`).style.display = 'block';
+        }
+
+        function dismissWalkthrough() {
+            localStorage.setItem('veraseal_walkthrough_dismissed', 'true');
+            document.getElementById('walkthrough-overlay').style.display = 'none';
+        }
+
+        function setDefaultTimestamp() {
+            const now = new Date();
+            const utc = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+            document.getElementById('timestamp').value = utc;
+        }
+
+        function loadTemplate(type) {
+            clearForm();
+            if (type === 'vendor') {
+                document.getElementById('subject').value = 'vendor-approval';
+                document.getElementById('ruleset').value = 'vendor-onboarding-policy';
+                addContextFieldWithValues('vendor_name', '');
+                addContextFieldWithValues('country', '');
+                addContextFieldWithValues('requires_nda', 'true');
+            } else if (type === 'policy') {
+                document.getElementById('subject').value = 'policy-exception';
+                document.getElementById('ruleset').value = 'exception-review';
+                addContextFieldWithValues('policy_id', '');
+                addContextFieldWithValues('exception_reason', '');
+                addContextFieldWithValues('duration_days', '');
+            } else if (type === 'risk') {
+                document.getElementById('subject').value = 'risk-acceptance';
+                document.getElementById('ruleset').value = 'risk-assessment';
+                addContextFieldWithValues('risk_id', '');
+                addContextFieldWithValues('risk_level', '');
+                addContextFieldWithValues('mitigation', '');
+            } else if (type === 'access') {
+                document.getElementById('subject').value = 'access-approval';
+                document.getElementById('ruleset').value = 'access-control';
+                addContextFieldWithValues('resource', '');
+                addContextFieldWithValues('access_level', '');
+                addContextFieldWithValues('requestor', '');
+            }
+            updateGeneratedJson();
+        }
+
+        function clearForm() {
+            document.getElementById('subject').value = '';
+            document.getElementById('ruleset').value = '';
+            setDefaultTimestamp();
+            document.querySelector('input[name="assert"][value="true"]').checked = true;
+            document.getElementById('contextFields').innerHTML = `
+                <div class="context-row">
+                    <input type="text" class="context-key" placeholder="Field name">
+                    <input type="text" class="context-value" placeholder="Value">
+                    <button type="button" class="btn-icon" onclick="removeContextRow(this)">-</button>
+                </div>
+            `;
+            attachContextListeners();
+            updateGeneratedJson();
+        }
+
+        function addContextRow() {
+            const container = document.getElementById('contextFields');
+            const row = document.createElement('div');
+            row.className = 'context-row';
+            row.innerHTML = `
+                <input type="text" class="context-key" placeholder="Field name">
+                <input type="text" class="context-value" placeholder="Value">
+                <button type="button" class="btn-icon" onclick="removeContextRow(this)">-</button>
+            `;
+            container.appendChild(row);
+            attachContextListeners();
+        }
+
+        function addContextFieldWithValues(key, value) {
+            const container = document.getElementById('contextFields');
+            const firstRow = container.querySelector('.context-row');
+            const firstKey = firstRow ? firstRow.querySelector('.context-key').value : '';
+            if (firstRow && !firstKey) {
+                firstRow.querySelector('.context-key').value = key;
+                firstRow.querySelector('.context-value').value = value;
+            } else {
+                const row = document.createElement('div');
+                row.className = 'context-row';
+                row.innerHTML = `
+                    <input type="text" class="context-key" placeholder="Field name" value="${key}">
+                    <input type="text" class="context-value" placeholder="Value" value="${value}">
+                    <button type="button" class="btn-icon" onclick="removeContextRow(this)">-</button>
+                `;
+                container.appendChild(row);
+            }
+            attachContextListeners();
+        }
+
+        function removeContextRow(btn) {
+            const row = btn.parentElement;
+            const container = document.getElementById('contextFields');
+            if (container.children.length > 1) {
+                row.remove();
+            } else {
+                row.querySelector('.context-key').value = '';
+                row.querySelector('.context-value').value = '';
+            }
+            updateGeneratedJson();
+        }
+
+        function attachContextListeners() {
+            document.querySelectorAll('.context-key, .context-value').forEach(input => {
+                input.removeEventListener('input', updateGeneratedJson);
+                input.addEventListener('input', updateGeneratedJson);
+            });
+        }
+
+        function buildPayload() {
+            const assertValue = document.querySelector('input[name="assert"]:checked').value === 'true';
+            const payload = { assert: assertValue };
+            document.querySelectorAll('.context-row').forEach(row => {
+                const key = row.querySelector('.context-key').value.trim();
+                const val = row.querySelector('.context-value').value.trim();
+                if (key) {
+                    if (val === 'true') payload[key] = true;
+                    else if (val === 'false') payload[key] = false;
+                    else if (!isNaN(val) && val !== '') payload[key] = Number(val);
+                    else payload[key] = val;
+                }
+            });
+            return payload;
+        }
+
+        function buildRequest() {
+            return {
+                version: "v1",
+                subject: document.getElementById('subject').value.trim(),
+                ruleset: document.getElementById('ruleset').value.trim(),
+                payload: buildPayload(),
+                injected_time_utc: document.getElementById('timestamp').value.trim()
+            };
+        }
+
+        function updateGeneratedJson() {
+            const req = buildRequest();
+            document.getElementById('generatedJson').textContent = JSON.stringify(req, null, 2);
+        }
+
+        async function submitForm() {
+            const subject = document.getElementById('subject').value.trim();
+            const ruleset = document.getElementById('ruleset').value.trim();
+            const timestamp = document.getElementById('timestamp').value.trim();
+
+            if (!subject || !ruleset || !timestamp) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const request = buildRequest();
+            await doSubmit(request);
+        }
+
+        async function submitRawJson() {
             const input = document.getElementById('requestInput').value;
-            const resultDiv = document.getElementById('result');
-            
             let parsed;
             try {
                 parsed = JSON.parse(input);
             } catch (e) {
-                resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;"><strong>Proof not generated.</strong> The input is not valid JSON.<br><br><code>' + e.message + '</code></div>';
+                document.getElementById('result').innerHTML = '<div class="result-box result-error" style="margin-top: 16px;"><strong>Invalid JSON.</strong><br><code>' + e.message + '</code></div>';
                 return;
             }
-            
+            await doSubmit(parsed);
+        }
+
+        async function doSubmit(request) {
+            incrementCounter('submissions');
+            const resultDiv = document.getElementById('result');
             try {
                 const response = await fetch('/evaluate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(parsed)
+                    body: JSON.stringify(request)
                 });
-                
                 const data = await response.json();
-                
                 if (response.ok) {
                     resultDiv.innerHTML = '<div class="result-box result-success" style="margin-top: 16px;">' +
                         '<strong>Decision Proof Generated</strong><br><br>' +
@@ -155,12 +428,17 @@
                         '</div>';
                 } else {
                     resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;">' +
-                        '<strong>Proof not generated.</strong> The input is invalid or incomplete.<br><br>' +
+                        '<strong>Proof not generated.</strong><br><br>' +
                         '<code>' + (data.detail || JSON.stringify(data)) + '</code></div>';
                 }
             } catch (e) {
                 resultDiv.innerHTML = '<div class="result-box result-error" style="margin-top: 16px;"><strong>Request failed.</strong><br>' + e.message + '</div>';
             }
+        }
+
+        function toggleAdvanced() {
+            const el = document.getElementById('advancedMode');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
         function verifyProof() {
@@ -169,6 +447,8 @@
                 window.location.href = '/replay/' + proofId;
             }
         }
+
+        document.addEventListener('DOMContentLoaded', initPage);
     </script>
 </body>
 </html>

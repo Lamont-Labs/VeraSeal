@@ -210,3 +210,69 @@ async def health():
         status="ok",
         strict_mode=True,
     ).model_dump())
+
+
+@router.get("/system-check", response_class=HTMLResponse)
+async def system_check(request: Request):
+    """Render the system self-test page.
+    
+    Runs deterministic internal checks with no side effects:
+    - Schema validity
+    - Hash determinism
+    - Replay integrity (logic only, no disk I/O)
+    """
+    from app.schemas.evaluation import (
+        EvaluationRequest,
+        canonicalize_json,
+        compute_sha256,
+    )
+    from app.core.engine import run_evaluation
+    
+    checks = {
+        "schema_valid": False,
+        "hash_determinism": False,
+        "replay_integrity": False,
+    }
+    
+    test_input = {
+        "version": "v1",
+        "subject": "self-test",
+        "ruleset": "determinism-check",
+        "payload": {"assert": True, "test_key": "test_value"},
+        "injected_time_utc": "2000-01-01T00:00:00Z",
+    }
+    
+    try:
+        req = EvaluationRequest(**test_input)
+        checks["schema_valid"] = True
+    except Exception:
+        req = None
+    
+    if req:
+        try:
+            canonical1 = canonicalize_json(test_input)
+            hash1 = compute_sha256(canonical1)
+            canonical2 = canonicalize_json(test_input)
+            hash2 = compute_sha256(canonical2)
+            checks["hash_determinism"] = (hash1 == hash2)
+        except Exception:
+            pass
+        
+        try:
+            result1, _ = run_evaluation(req)
+            result2, _ = run_evaluation(req)
+            checks["replay_integrity"] = (
+                result1.evaluation_id == result2.evaluation_id and
+                result1.input_sha256 == result2.input_sha256 and
+                result1.decision == result2.decision
+            )
+        except Exception:
+            pass
+    
+    all_pass = all(checks.values())
+    
+    return templates.TemplateResponse("system_check.html", {
+        "request": request,
+        "checks": checks,
+        "all_pass": all_pass,
+    })

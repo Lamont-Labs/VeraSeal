@@ -14,9 +14,38 @@
         <a href="/" class="nav-link back-link">&larr; Back to Home</a>
         
         <header class="header">
-            <h1>Decision Proof Generated</h1>
-            <p class="subtitle">This record can be replayed later to verify nothing changed.</p>
+            <h1>Decision Proof Record</h1>
         </header>
+
+        {% if output and metadata %}
+        <div class="summary-card">
+            <h2>Decision Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Subject</span>
+                    <span class="summary-value">{{ metadata.subject }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Ruleset</span>
+                    <span class="summary-value">{{ metadata.ruleset }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Decision</span>
+                    <span class="summary-value {% if output.decision == 'ACCEPT' %}decision-accept{% else %}decision-reject{% endif %}">
+                        {{ output.decision }}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Timestamp (UTC)</span>
+                    <span class="summary-value">{{ metadata.injected_time_utc }}</span>
+                </div>
+                <div class="summary-item" style="grid-column: 1 / -1;">
+                    <span class="summary-label">Proof ID</span>
+                    <span class="summary-value proof-id">{{ evaluation_id }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <div class="card">
             <h2>Proof ID</h2>
