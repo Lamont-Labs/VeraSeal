@@ -14,9 +14,19 @@
         </header>
 
         <div class="card">
-            <h2>What this is</h2>
-            <p>This system evaluates structured information under fixed rules and produces a permanent, verifiable record of the decision.</p>
-            <p>It exists so you can answer: "What happened, why, and can we prove it?"</p>
+            <p>This system creates permanent, tamper-evident records of important decisions. It exists so you can answer: What happened, why, and can we prove it?</p>
+        </div>
+
+        <div class="card">
+            <h2>Example: Vendor Approval</h2>
+            <p>A compliance team approves a new vendor. Months or years later, an auditor asks why the vendor was approved and what rules were applied at the time.</p>
+            <p>This system produces a permanent record showing:</p>
+            <ul>
+                <li>The exact information reviewed</li>
+                <li>The rules applied</li>
+                <li>The decision result</li>
+                <li>Proof the record has not been altered</li>
+            </ul>
         </div>
 
         <div class="warning-box">
@@ -33,7 +43,7 @@
 
         <div class="card">
             <h2>Who it's for</h2>
-            <p style="margin-bottom: 0;">For teams that need provable decisions: compliance, risk, audit, legal, and regulated operations.</p>
+            <p style="margin-bottom: 0;">Teams responsible for decisions that must hold up under review — including compliance, risk, audit, legal, and regulated operations.</p>
         </div>
 
         <div class="card">
@@ -41,7 +51,7 @@
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <div class="step-text">Submit the decision inputs</div>
+                    <div class="step-text">Submit the decision details</div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
@@ -56,6 +66,7 @@
                     <div class="step-text">Replay verifies nothing changed</div>
                 </div>
             </div>
+            <p style="margin-top: 16px; margin-bottom: 0; text-align: center;">The same input will always produce the same result.</p>
         </div>
 
         <div class="card">
@@ -70,22 +81,11 @@
             </ul>
         </div>
 
-        <div class="card" style="text-align: center; padding: 32px;">
-            <button class="btn btn-primary" onclick="document.getElementById('requestInput').scrollIntoView({ behavior: 'smooth' }); document.getElementById('requestInput').focus();" style="font-size: 1.125rem; padding: 16px 32px;">Generate Decision Proof</button>
-            <p style="margin-top: 12px; margin-bottom: 0;"><a href="#" onclick="loadExample(); return false;" class="nav-link">See an example</a></p>
-        </div>
-
-        <div class="empty-state card">
-            <p><strong>No proof records exist yet.</strong></p>
-            <p style="margin-bottom: 0;">Generate your first decision proof to see the audit trail.</p>
-        </div>
-
         <div class="card" id="generate-section">
-            <h2>Generate a Decision Proof</h2>
-            <p>Paste structured input (JSON). The system will evaluate it under fixed rules and generate a proof bundle.</p>
-            <p><strong>Same input → same output. Every time.</strong> If anything is missing or unclear, the system stops.</p>
+            <h2>Decision Details (Structured Format)</h2>
+            <p>This represents the exact information reviewed at the time the decision was made. The structure ensures nothing is ambiguous.</p>
             
-            <label for="requestInput">Decision Inputs (JSON)</label>
+            <label for="requestInput">Decision Details (Structured Format)</label>
             <textarea id="requestInput">{
   "version": "v1",
   "subject": "vendor-onboarding",
@@ -100,16 +100,17 @@
 }</textarea>
 
             <div class="btn-group">
-                <button class="btn btn-primary" onclick="submitEvaluation()">Generate Proof</button>
+                <button class="btn btn-primary" onclick="submitEvaluation()">Generate Decision Proof</button>
                 <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
             </div>
+            <p style="margin-top: 12px; color: var(--text-secondary); font-size: 0.875rem;">This creates a permanent, verifiable record of the decision.</p>
             
             <div id="result"></div>
         </div>
 
         <div class="card">
             <h2>Verify an Existing Proof</h2>
-            <p>Enter a Proof ID to verify that the record is unchanged.</p>
+            <p>Use this to confirm that a previously generated decision record has not been altered.</p>
             <div style="display: flex; gap: 12px; margin-top: 12px;">
                 <input type="text" id="verifyId" placeholder="Enter Proof ID" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
                 <button class="btn btn-secondary" onclick="verifyProof()">Verify Proof</button>
