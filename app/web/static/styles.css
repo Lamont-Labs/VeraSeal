@@ -26,25 +26,17 @@ body {
     color: var(--text);
     background: var(--bg-secondary);
     min-height: 100vh;
-    padding-top: 56px;
 }
 
 .site-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 56px;
     background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
-    z-index: 100;
 }
 
 .site-header-inner {
     max-width: 680px;
     margin: 0 auto;
-    padding: 0 20px;
-    height: 100%;
+    padding: 16px 20px;
     display: flex;
     align-items: center;
     gap: 10px;
