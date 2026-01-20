@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veritas / Sentinel Core</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { font-size: 1.5em; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-family: monospace;
+            font-size: 14px;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+            border: none;
+        }
+        button:hover { background: #555; }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error { background: #fee; border-color: #c00; }
+        .success { background: #efe; border-color: #0c0; }
+        a { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Veritas / Sentinel Core</h1>
+    <p>Deterministic Infrastructure Evaluator</p>
+    
+    <h2>Submit Evaluation Request</h2>
+    <p>Enter JSON matching EvaluationRequest schema:</p>
+    
+    <textarea id="requestInput">{
+  "version": "v1",
+  "subject": "test-subject",
+  "ruleset": "test-ruleset",
+  "payload": {
+    "assert": true
+  },
+  "injected_time_utc": "2024-01-01T00:00:00Z"
+}</textarea>
+    
+    <button onclick="submitEvaluation()">Submit Evaluation</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function submitEvaluation() {
+            const input = document.getElementById('requestInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            let parsed;
+            try {
+                parsed = JSON.parse(input);
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Invalid JSON: ' + e.message;
+                return;
+            }
+            
+            try {
+                const response = await fetch('/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parsed)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = '<strong>Evaluation ID:</strong> ' + data.evaluation_id + 
+                        '\n\n<a href="/evaluations/' + data.evaluation_id + '">View Evaluation Details</a>' +
+                        '\n\n<strong>Full Result:</strong>\n' + JSON.stringify(data.result, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Error: ' + JSON.stringify(data, null, 2);
+                }
+            } catch (e) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Request failed: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

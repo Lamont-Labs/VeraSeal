@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replay {{ evaluation_id }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { font-size: 1.5em; word-break: break-all; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid;
+        }
+        .ok { background: #efe; border-color: #0c0; }
+        .fail { background: #fee; border-color: #c00; }
+        a { color: #333; }
+    </style>
+</head>
+<body>
+    <p><a href="/">&larr; Back to Home</a></p>
+    <p><a href="/evaluations/{{ evaluation_id }}">&larr; Back to Evaluation</a></p>
+    
+    <h1>Replay Verification: {{ evaluation_id }}</h1>
+    
+    {% if result.replay_ok %}
+    <div class="result ok">
+        <h2>REPLAY OK</h2>
+        <p>Determinism verified. Re-running the evaluation produced identical hashes.</p>
+    </div>
+    {% else %}
+    <div class="result fail">
+        <h2>REPLAY FAILED</h2>
+        <p>Determinism check failed. The following mismatches were detected:</p>
+        <ul>
+        {% for mismatch in result.mismatches %}
+            <li>{{ mismatch }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>
