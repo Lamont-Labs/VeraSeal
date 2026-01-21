@@ -1,10 +1,10 @@
 # VeraSeal
 
 ## Overview
-VeraSeal is a deterministic evaluator that records decisions with verifiable proof. It is a strict, append-only evaluation system with cryptographic provenance.
+VeraSeal is a deterministic evaluator that records decisions with verifiable proof. It is a strict, append-only evaluation system with cryptographic provenance. Target audience: compliance, risk, audit, legal, and governance teams.
 
 ## Project Status
-**Complete MVP with UI Improvements** - All features implemented and tested.
+**Complete MVP with Developer Experience Improvements** - All features implemented and tested (242 tests passing).
 
 ## Key Architecture Decisions
 - **TZ=UTC**: Forced at process start for determinism
@@ -69,12 +69,15 @@ docs/
 - **Run tests**: `pytest tests/ -v`
 
 ## API Endpoints
-- `GET /` - Homepage with guided form
-- `POST /evaluate` - Submit evaluation
+- `GET /` - Homepage with guided JSON builder form
+- `POST /evaluate` - Submit evaluation (improved error messages)
 - `GET /evaluations/{id}` - Proof detail page
 - `GET /replay/{id}` - Verification result page
 - `GET /system-check` - System self-test (no side effects)
 - `GET /health` - Health check
+- `GET /version` - Version and git commit info (NEW)
+- `GET /schema` - Authoritative JSON schema (NEW)
+- `GET /examples` - Canonical example payloads (NEW)
 
 ## Dependencies
 - fastapi, uvicorn[standard], pydantic, jinja2, python-multipart, pytest, httpx
@@ -82,7 +85,10 @@ docs/
 ## MVP Rule
 IF payload.assert == true → ACCEPT, else → REJECT
 
-## Test Suite (229 tests total, 8.8x increase from original 26)
+## Tools
+- **Verification Script**: `python tools/verify_published.py [BASE_URL]` - Verifies deployment health, endpoints, evaluation submission, replay, and determinism
+
+## Test Suite (242 tests total, 9.3x increase from original 26)
 - **Adversarial inputs**: Type coercion, injection attacks, boundary values, malformed JSON
 - **Determinism**: Canonicalization, parallel evaluation, hash collision resistance
 - **Replay**: Tamper detection for input/output/metadata

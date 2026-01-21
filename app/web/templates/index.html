@@ -163,7 +163,18 @@
                 <div class="form-group">
                     <label>Generated Request (Read-Only)</label>
                     <pre id="generatedJson" class="generated-json"></pre>
+                    <div class="copy-buttons">
+                        <button type="button" class="btn btn-secondary btn-small" onclick="copyJson()">Copy JSON</button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="copyMinified()">Copy Minified</button>
+                        <button type="button" class="btn btn-secondary btn-small" onclick="copyCurl()">Copy cURL</button>
+                    </div>
                     <span class="helper-text">This is the exact data that will be submitted.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>cURL Command (for API integration)</label>
+                    <pre id="curlCommand" class="curl-command"></pre>
+                    <span class="helper-text">Use this command to submit via command line or integrate with your systems.</span>
                 </div>
 
                 <div class="btn-group">
@@ -207,6 +218,9 @@
 
         <div class="card system-links">
             <a href="/system-check" class="nav-link">System Self-Test</a>
+            <a href="/schema" class="nav-link">API Schema</a>
+            <a href="/examples" class="nav-link">Example Payloads</a>
+            <a href="/version" class="nav-link">Version Info</a>
         </div>
     </div>
 
@@ -382,6 +396,45 @@
         function updateGeneratedJson() {
             const req = buildRequest();
             document.getElementById('generatedJson').textContent = JSON.stringify(req, null, 2);
+            updateCurlCommand(req);
+        }
+
+        function updateCurlCommand(req) {
+            const minified = JSON.stringify(req);
+            const escaped = minified.replace(/'/g, "'\\''");
+            const curl = `curl -X POST '${window.location.origin}/evaluate' \\
+  -H 'Content-Type: application/json' \\
+  -d '${escaped}'`;
+            document.getElementById('curlCommand').textContent = curl;
+        }
+
+        function copyJson() {
+            const req = buildRequest();
+            navigator.clipboard.writeText(JSON.stringify(req, null, 2)).then(() => {
+                showCopyFeedback('JSON copied!');
+            });
+        }
+
+        function copyMinified() {
+            const req = buildRequest();
+            navigator.clipboard.writeText(JSON.stringify(req)).then(() => {
+                showCopyFeedback('Minified JSON copied!');
+            });
+        }
+
+        function copyCurl() {
+            const text = document.getElementById('curlCommand').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyFeedback('cURL command copied!');
+            });
+        }
+
+        function showCopyFeedback(message) {
+            const feedback = document.createElement('div');
+            feedback.className = 'copy-feedback';
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+            setTimeout(() => feedback.remove(), 2000);
         }
 
         async function submitForm() {

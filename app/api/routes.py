@@ -2,8 +2,10 @@
 from fastapi import APIRouter, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 import os
 import json
+import subprocess
 
 from app.schemas.evaluation import (
     EvaluationRequest,
@@ -24,6 +26,56 @@ from app.audit.store import (
 )
 from app.replay.replay import replay_evaluation
 from app.invariants.checks import InvariantViolation
+
+
+VERSION = "1.0.0"
+
+def _get_git_commit() -> str:
+    """Get current git commit hash (short form)."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return "unknown"
+
+
+def _format_validation_error(e: ValidationError) -> dict:
+    """Format Pydantic validation error for user-friendly display."""
+    errors = []
+    for err in e.errors():
+        loc = ".".join(str(x) for x in err.get("loc", []))
+        msg = err.get("msg", "")
+        err_type = err.get("type", "")
+        
+        field_error = {
+            "field": loc,
+            "message": msg,
+            "type": err_type,
+        }
+        
+        if err_type == "missing":
+            field_error["fix"] = f"Add the required field '{loc}' to your request"
+        elif err_type == "extra_forbidden":
+            field_error["fix"] = f"Remove the unexpected field '{loc}' from your request"
+        elif "string" in err_type:
+            field_error["fix"] = f"Ensure '{loc}' is a string value"
+        elif "bool" in err_type:
+            field_error["fix"] = f"Ensure '{loc}' is true or false (not quoted)"
+        
+        errors.append(field_error)
+    
+    return {
+        "error": "Validation failed",
+        "details": errors,
+        "hint": "Check the /schema endpoint for the expected request format"
+    }
 
 
 router = APIRouter()
@@ -48,10 +100,19 @@ async def evaluate(request: Request):
     try:
         body = await request.json()
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Invalid JSON",
+                "message": str(e),
+                "fix": "Ensure your request body is valid JSON"
+            }
+        )
     
     try:
         eval_request = EvaluationRequest(**body)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=_format_validation_error(e))
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
     
@@ -65,7 +126,15 @@ async def evaluate(request: Request):
     try:
         final_result = store_evaluation(eval_request, result)
     except InvariantViolation as e:
-        raise HTTPException(status_code=409, detail=f"Storage failed (append-only violation): {e}")
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "Duplicate evaluation",
+                "message": "This exact evaluation already exists (append-only policy)",
+                "evaluation_id": result.evaluation_id,
+                "fix": "Each unique input can only be evaluated once. View the existing record instead."
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Storage failed: {e}")
     
@@ -210,6 +279,150 @@ async def health():
         status="ok",
         strict_mode=True,
     ).model_dump())
+
+
+@router.get("/version")
+async def version():
+    """Version endpoint with commit hash."""
+    return JSONResponse(content={
+        "version": VERSION,
+        "commit": _get_git_commit(),
+        "name": "VeraSeal",
+        "description": "Deterministic evaluation with cryptographic provenance"
+    })
+
+
+@router.get("/schema")
+async def schema():
+    """Return the authoritative JSON schema for evaluation requests."""
+    schema_data = {
+        "request": {
+            "type": "object",
+            "required": ["version", "subject", "ruleset", "payload", "injected_time_utc"],
+            "additionalProperties": False,
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "const": "v1",
+                    "description": "Schema version, must be 'v1'"
+                },
+                "subject": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "description": "What is being decided (e.g., vendor-approval, access-request)"
+                },
+                "ruleset": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "description": "Which rules/policy are being applied"
+                },
+                "payload": {
+                    "type": "object",
+                    "description": "Decision data. Must contain 'assert': true for ACCEPT, any other value for REJECT"
+                },
+                "injected_time_utc": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$",
+                    "description": "RFC3339/ISO8601 timestamp in UTC (e.g., 2024-01-15T10:30:00Z)"
+                }
+            }
+        },
+        "response": {
+            "type": "object",
+            "properties": {
+                "evaluation_id": {"type": "string", "description": "Unique ID derived from input hash"},
+                "result": {
+                    "type": "object",
+                    "properties": {
+                        "evaluation_id": {"type": "string"},
+                        "input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                        "output_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                        "manifest_sha256": {"type": "string"},
+                        "decision": {"type": "string", "enum": ["ACCEPT", "REJECT"]},
+                        "reasons": {"type": "array", "items": {"type": "string"}},
+                        "trace": {"type": "array"},
+                        "created_time_utc": {"type": "string"}
+                    }
+                }
+            }
+        },
+        "mvp_rule": "IF payload.assert === true THEN ACCEPT ELSE REJECT"
+    }
+    return JSONResponse(content=schema_data)
+
+
+@router.get("/examples")
+async def examples():
+    """Return canonical example payloads for common use cases."""
+    example_data = {
+        "vendor_approval": {
+            "description": "Approve a new vendor for onboarding",
+            "request": {
+                "version": "v1",
+                "subject": "vendor-approval",
+                "ruleset": "vendor-onboarding-policy",
+                "payload": {
+                    "assert": True,
+                    "vendor_name": "Acme Corp",
+                    "country": "US",
+                    "requires_nda": True
+                },
+                "injected_time_utc": "2024-01-15T10:30:00Z"
+            },
+            "expected_decision": "ACCEPT"
+        },
+        "policy_exception": {
+            "description": "Request exception to standard policy",
+            "request": {
+                "version": "v1",
+                "subject": "policy-exception",
+                "ruleset": "exception-review",
+                "payload": {
+                    "assert": True,
+                    "policy_id": "SEC-001",
+                    "exception_reason": "Legacy system integration",
+                    "duration_days": 90
+                },
+                "injected_time_utc": "2024-01-15T14:00:00Z"
+            },
+            "expected_decision": "ACCEPT"
+        },
+        "risk_rejection": {
+            "description": "Reject a high-risk proposal",
+            "request": {
+                "version": "v1",
+                "subject": "risk-acceptance",
+                "ruleset": "risk-assessment",
+                "payload": {
+                    "assert": False,
+                    "risk_id": "RISK-2024-001",
+                    "risk_level": "high",
+                    "reason": "Insufficient mitigation controls"
+                },
+                "injected_time_utc": "2024-01-15T16:00:00Z"
+            },
+            "expected_decision": "REJECT"
+        },
+        "access_approval": {
+            "description": "Approve access request",
+            "request": {
+                "version": "v1",
+                "subject": "access-approval",
+                "ruleset": "access-control",
+                "payload": {
+                    "assert": True,
+                    "resource": "production-database",
+                    "access_level": "read-only",
+                    "requestor": "user@example.com"
+                },
+                "injected_time_utc": "2024-01-15T09:00:00Z"
+            },
+            "expected_decision": "ACCEPT"
+        }
+    }
+    return JSONResponse(content=example_data)
 
 
 @router.get("/system-check", response_class=HTMLResponse)
