@@ -19,14 +19,17 @@ from app.audit.store import (
 )
 
 
+LEGACY_POLICY_ID = "mvp-placeholder-v0"
+
+
 def replay_evaluation(evaluation_id: str) -> Tuple[Optional[ReplayResult], Optional[str]]:
     """Replay an evaluation and verify determinism.
     
     Steps:
-    1. Load saved input.json
-    2. Re-run engine producing new output
-    3. Recompute hashes
-    4. Compare with saved output.json + manifest hashes
+    1. Load saved input.json and output.json
+    2. Detect policy_id from saved output (legacy artifacts use mvp-placeholder-v0)
+    3. Re-run engine with the same policy_id
+    4. Recompute hashes and compare
     5. If any mismatch -> FAIL CLOSED with explicit mismatch report
     
     Returns (ReplayResult, error_message) where error_message is set if evaluation not found.
@@ -46,6 +49,10 @@ def replay_evaluation(evaluation_id: str) -> Tuple[Optional[ReplayResult], Optio
     if saved_manifest is None:
         return None, f"manifest.json not found for: {evaluation_id}"
     
+    saved_policy_id = saved_output.get("policy_id")
+    if saved_policy_id is None:
+        saved_policy_id = LEGACY_POLICY_ID
+    
     try:
         request = EvaluationRequest(**saved_input)
     except Exception as e:
@@ -54,7 +61,7 @@ def replay_evaluation(evaluation_id: str) -> Tuple[Optional[ReplayResult], Optio
             mismatches=[f"Failed to parse saved input: {e}"]
         ), None
     
-    new_result, new_input_sha256 = run_evaluation(request)
+    new_result, new_input_sha256 = run_evaluation(request, policy_id=saved_policy_id)
     
     mismatches: List[str] = []
     
@@ -77,6 +84,11 @@ def replay_evaluation(evaluation_id: str) -> Tuple[Optional[ReplayResult], Optio
     if new_result.decision != saved_output.get("decision"):
         mismatches.append(
             f"decision mismatch: saved={saved_output.get('decision')}, replayed={new_result.decision}"
+        )
+    
+    if new_result.policy_id != saved_policy_id:
+        mismatches.append(
+            f"policy_id mismatch: saved={saved_policy_id}, replayed={new_result.policy_id}"
         )
     
     saved_manifest_sha256 = saved_manifest.get("manifest_sha256")

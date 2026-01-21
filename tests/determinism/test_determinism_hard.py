@@ -147,7 +147,7 @@ class TestEvaluationDeterminism:
             version="v1",
             subject="parallel-test",
             ruleset="concurrency-test",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -167,7 +167,7 @@ class TestEvaluationDeterminism:
             version="v1",
             subject="trace-test",
             ruleset="trace-test",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -207,7 +207,7 @@ class TestHashCollisionResistance:
                 version="v1",
                 subject=f"subject-{i:05d}",
                 ruleset="rules",
-                payload={"assert": True},
+                payload={"decision_requested": "ACCEPT", "justification": "Test"},
                 injected_time_utc="2024-01-01T00:00:00Z",
             )
             result, _ = run_evaluation(request)
@@ -221,14 +221,14 @@ class TestHashCollisionResistance:
             version="v1",
             subject="test-subject-a",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         request2 = EvaluationRequest(
             version="v1",
             subject="test-subject-b",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -244,14 +244,14 @@ class TestHashCollisionResistance:
             version="v1",
             subject="time-test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         request2 = EvaluationRequest(
             version="v1",
             subject="time-test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Test"},
             injected_time_utc="2024-01-01T00:00:01Z",
         )
         
@@ -271,27 +271,27 @@ class TestDecisionDeterminism:
                 version="v1",
                 subject=f"accept-test-{i}",
                 ruleset="rules",
-                payload={"assert": True, "variation": i},
+                payload={"decision_requested": "ACCEPT", "justification": "Test decision", "variation": i},
                 injected_time_utc="2024-01-01T00:00:00Z",
             )
             result, _ = run_evaluation(request)
             assert result.decision == "ACCEPT"
     
-    def test_reject_false_always_same(self):
-        """assert=False always produces REJECT."""
+    def test_reject_decision_always_same(self):
+        """decision_requested=REJECT always produces REJECT."""
         for i in range(50):
             request = EvaluationRequest(
                 version="v1",
                 subject=f"reject-test-{i}",
                 ruleset="rules",
-                payload={"assert": False, "variation": i},
+                payload={"decision_requested": "REJECT", "justification": "Rejection decision", "variation": i},
                 injected_time_utc="2024-01-01T00:00:00Z",
             )
             result, _ = run_evaluation(request)
             assert result.decision == "REJECT"
     
     def test_reject_missing_always_same(self):
-        """Missing assert always produces REJECT."""
+        """Missing decision_requested always produces REJECT."""
         for i in range(50):
             request = EvaluationRequest(
                 version="v1",
@@ -306,7 +306,7 @@ class TestDecisionDeterminism:
     def test_reasons_always_populated(self):
         """Reasons must always be populated."""
         for decision_type, payload in [
-            ("accept", {"assert": True}),
+            ("accept", {"decision_requested": "ACCEPT", "justification": "Test"}),
             ("reject_false", {"assert": False}),
             ("reject_missing", {}),
         ]:

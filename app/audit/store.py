@@ -83,6 +83,7 @@ def store_evaluation(
         "evaluation_id": result.evaluation_id,
         "input_sha256": result.input_sha256,
         "output_sha256": result.output_sha256,
+        "policy_id": result.policy_id,
         "decision": result.decision,
         "reasons": result.reasons,
         "created_time_utc": result.created_time_utc,
@@ -103,6 +104,7 @@ def store_evaluation(
     
     metadata = {
         "evaluation_id": result.evaluation_id,
+        "policy_id": result.policy_id,
         "injected_time_utc": request.injected_time_utc,
         "subject": request.subject,
         "ruleset": request.ruleset,
@@ -123,6 +125,7 @@ def store_evaluation(
         input_sha256=result.input_sha256,
         output_sha256=result.output_sha256,
         manifest_sha256=manifest_sha256,
+        policy_id=result.policy_id,
         decision=result.decision,
         reasons=result.reasons,
         trace=result.trace,

@@ -139,7 +139,7 @@ class TestEvaluationInvariants:
             version="v1",
             subject="trace-all-pass",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Trace pass test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         result, _ = run_evaluation(request)
@@ -150,7 +150,7 @@ class TestEvaluationInvariants:
             version="v1",
             subject="trace-details-test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Trace details test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         result, _ = run_evaluation(request)
@@ -165,7 +165,7 @@ class TestHashInvariants:
             version="v1",
             subject="hash-len-test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Hash length test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         result, input_sha256 = run_evaluation(request)

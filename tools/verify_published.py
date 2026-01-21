@@ -106,13 +106,16 @@ class VerificationRunner:
                 return False
             
             data = r.json()
+            self.check("Schema has 'policy_id' field", "policy_id" in data)
+            self.check("Policy ID is evaluation-policy-v1", data.get("policy_id") == "evaluation-policy-v1")
             self.check("Schema has 'request' section", "request" in data)
             self.check("Schema has 'response' section", "response" in data)
-            self.check("Schema has 'mvp_rule' description", "mvp_rule" in data)
+            self.check("Schema has 'evaluation_rules'", "evaluation_rules" in data)
             
             req_schema = data.get("request", {})
-            required_fields = req_schema.get("required", [])
-            self.check("Required fields defined", len(required_fields) == 5)
+            payload_props = req_schema.get("properties", {}).get("payload", {})
+            self.check("Payload requires decision_requested", "decision_requested" in payload_props.get("properties", {}))
+            self.check("Payload requires justification", "justification" in payload_props.get("properties", {}))
             return True
         except Exception as e:
             self.check("Schema endpoint accessible", False, str(e))
@@ -135,12 +138,17 @@ class VerificationRunner:
             self.check("Example has description", "description" in example)
             self.check("Example has request", "request" in example)
             self.check("Example has expected_decision", "expected_decision" in example)
+            
+            request = example.get("request", {})
+            payload = request.get("payload", {})
+            self.check("Example uses decision_requested", "decision_requested" in payload)
+            self.check("Example uses justification", "justification" in payload)
             return True
         except Exception as e:
             self.check("Examples endpoint accessible", False, str(e))
             return False
     
-    def submit_evaluation(self, name: str, payload: dict) -> Tuple[bool, Optional[str]]:
+    def submit_evaluation(self, name: str, decision: str, justification: str) -> Tuple[bool, Optional[str]]:
         """Submit an evaluation and return (success, evaluation_id)."""
         unique_suffix = str(int(time.time() * 1000000))[-8:]
         
@@ -148,7 +156,10 @@ class VerificationRunner:
             "version": "v1",
             "subject": f"verify-{name}-{unique_suffix}",
             "ruleset": "verification-test",
-            "payload": payload,
+            "payload": {
+                "decision_requested": decision,
+                "justification": justification
+            },
             "injected_time_utc": "2024-01-01T00:00:00Z"
         }
         
@@ -179,17 +190,75 @@ class VerificationRunner:
         """Submit test evaluations."""
         print("\n5. Evaluation Submission")
         
-        success1, eval_id1 = self.submit_evaluation("accept", {"assert": True, "test": "verification"})
+        success1, eval_id1 = self.submit_evaluation(
+            "accept", 
+            "ACCEPT", 
+            "Verification test: ACCEPT decision with justification"
+        )
         self.check("Submit ACCEPT evaluation", success1, f"id={eval_id1}")
         
-        success2, eval_id2 = self.submit_evaluation("reject", {"assert": False, "test": "verification"})
+        success2, eval_id2 = self.submit_evaluation(
+            "reject",
+            "REJECT",
+            "Verification test: REJECT decision with justification"
+        )
         self.check("Submit REJECT evaluation", success2, f"id={eval_id2}")
         
         return success1 and success2
     
+    def check_fail_closed(self) -> bool:
+        """Verify fail-closed behavior."""
+        print("\n6. Fail-Closed Checks")
+        
+        unique_suffix = str(int(time.time() * 1000000))[-8:]
+        
+        missing_decision = {
+            "version": "v1",
+            "subject": f"fail-closed-{unique_suffix}",
+            "ruleset": "test",
+            "payload": {"justification": "Missing decision_requested"},
+            "injected_time_utc": "2024-01-01T00:00:00Z"
+        }
+        r = self.client.post(f"{self.base_url}/evaluate", json=missing_decision)
+        if r.status_code == 200:
+            decision = r.json().get("result", {}).get("decision")
+            self.check("Missing decision_requested -> REJECT", decision == "REJECT")
+        else:
+            self.check("Missing decision_requested handled", r.status_code in (200, 409))
+        
+        missing_justification = {
+            "version": "v1",
+            "subject": f"fail-closed2-{unique_suffix}",
+            "ruleset": "test",
+            "payload": {"decision_requested": "ACCEPT"},
+            "injected_time_utc": "2024-01-01T00:00:00Z"
+        }
+        r = self.client.post(f"{self.base_url}/evaluate", json=missing_justification)
+        if r.status_code == 200:
+            decision = r.json().get("result", {}).get("decision")
+            self.check("Missing justification -> REJECT", decision == "REJECT")
+        else:
+            self.check("Missing justification handled", r.status_code in (200, 409))
+        
+        invalid_decision = {
+            "version": "v1",
+            "subject": f"fail-closed3-{unique_suffix}",
+            "ruleset": "test",
+            "payload": {"decision_requested": "MAYBE", "justification": "Invalid value"},
+            "injected_time_utc": "2024-01-01T00:00:00Z"
+        }
+        r = self.client.post(f"{self.base_url}/evaluate", json=invalid_decision)
+        if r.status_code == 200:
+            decision = r.json().get("result", {}).get("decision")
+            self.check("Invalid decision_requested -> REJECT", decision == "REJECT")
+        else:
+            self.check("Invalid decision_requested handled", r.status_code in (200, 409))
+        
+        return True
+    
     def check_replay(self) -> bool:
         """Check replay endpoint for submitted evaluations."""
-        print("\n6. Replay Verification")
+        print("\n7. Replay Verification")
         
         if not self.evaluation_ids:
             self.check("Have evaluations to replay", False, "No evaluations submitted")
@@ -216,13 +285,13 @@ class VerificationRunner:
     
     def check_determinism(self) -> bool:
         """Verify deterministic hash computation."""
-        print("\n7. Determinism Verification")
+        print("\n8. Determinism Verification")
         
         test_input = {
             "version": "v1",
             "subject": "determinism-check",
             "ruleset": "test",
-            "payload": {"assert": True},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Determinism test"},
             "injected_time_utc": "2024-01-01T00:00:00Z"
         }
         
@@ -240,6 +309,31 @@ class VerificationRunner:
         
         return hash1 == hash2
     
+    def check_policy_id(self) -> bool:
+        """Verify policy_id is included in evaluation results."""
+        print("\n9. Policy ID in Results")
+        
+        if not self.evaluation_ids:
+            self.check("Have evaluations to check", False, "No evaluations")
+            return False
+        
+        eval_id = self.evaluation_ids[0]
+        
+        try:
+            r = self.client.get(f"{self.base_url}/evaluations/{eval_id}/output")
+            if r.status_code == 200:
+                data = r.json()
+                policy_id = data.get("policy_id")
+                self.check("Output has policy_id", policy_id is not None)
+                self.check("Policy ID is evaluation-policy-v1", policy_id == "evaluation-policy-v1")
+                return True
+            else:
+                self.check(f"Output endpoint accessible", r.status_code == 200, f"status={r.status_code}")
+                return False
+        except Exception as e:
+            self.check("Output accessible", False, str(e))
+            return False
+    
     def run_all(self) -> bool:
         """Run all verification checks."""
         print(f"VeraSeal Verification Script")
@@ -251,8 +345,10 @@ class VerificationRunner:
         self.check_schema()
         self.check_examples()
         self.check_evaluations()
+        self.check_fail_closed()
         self.check_replay()
         self.check_determinism()
+        self.check_policy_id()
         
         print("\n" + "=" * 50)
         print(f"Results: {self.passed} passed, {self.failed} failed")

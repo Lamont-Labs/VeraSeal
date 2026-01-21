@@ -31,10 +31,41 @@ The form generates valid JSON automatically. You can:
 ```bash
 curl -X POST 'http://localhost:5000/evaluate' \
   -H 'Content-Type: application/json' \
-  -d '{"version":"v1","subject":"vendor-approval","ruleset":"vendor-onboarding-policy","payload":{"assert":true,"vendor_name":"Acme Corp"},"injected_time_utc":"2024-01-15T10:30:00Z"}'
+  -d '{
+    "version": "v1",
+    "subject": "vendor-approval",
+    "ruleset": "vendor-onboarding-policy",
+    "payload": {
+      "decision_requested": "ACCEPT",
+      "justification": "Vendor passed due diligence review. NDA signed. SOC2 certified."
+    },
+    "injected_time_utc": "2024-01-15T10:30:00Z"
+  }'
 ```
 
-### Example Payloads
+## Evaluation Policy v1
+
+VeraSeal uses **evaluation-policy-v1** to evaluate all decisions. This policy enforces:
+
+### Required Payload Fields
+1. **decision_requested**: Must be exactly `"ACCEPT"` or `"REJECT"`
+2. **justification**: Must be a non-empty string explaining the decision
+
+### Evaluation Rules (in order)
+| Rule | Check | Failure |
+|------|-------|---------|
+| R001 | `decision_requested` field present | REJECT |
+| R002 | `decision_requested` is "ACCEPT" or "REJECT" | REJECT |
+| R003 | `justification` field present | REJECT |
+| R004 | `justification` is non-empty string | REJECT |
+| R005 | Record the decision | (success) |
+
+### Fail-Closed Behavior
+- Any rule failure results in **REJECT**
+- No coercion: `"accept"`, `true`, `1` are all invalid (must be exactly `"ACCEPT"`)
+- Empty or whitespace-only justification is rejected
+
+## Example Payloads
 
 **Vendor Approval (ACCEPT):**
 ```json
@@ -43,9 +74,8 @@ curl -X POST 'http://localhost:5000/evaluate' \
   "subject": "vendor-approval",
   "ruleset": "vendor-onboarding-policy",
   "payload": {
-    "assert": true,
-    "vendor_name": "Acme Corp",
-    "country": "US"
+    "decision_requested": "ACCEPT",
+    "justification": "Vendor Acme Corp passed due diligence review. NDA signed 2024-01-10. SOC2 Type II certified."
   },
   "injected_time_utc": "2024-01-15T10:30:00Z"
 }
@@ -58,9 +88,8 @@ curl -X POST 'http://localhost:5000/evaluate' \
   "subject": "risk-acceptance",
   "ruleset": "risk-assessment",
   "payload": {
-    "assert": false,
-    "risk_id": "RISK-2024-001",
-    "reason": "Insufficient mitigation"
+    "decision_requested": "REJECT",
+    "justification": "Risk RISK-2024-001 rejected due to insufficient mitigation controls. Residual risk exceeds acceptable threshold."
   },
   "injected_time_utc": "2024-01-15T16:00:00Z"
 }
@@ -73,9 +102,8 @@ curl -X POST 'http://localhost:5000/evaluate' \
   "subject": "policy-exception",
   "ruleset": "exception-review",
   "payload": {
-    "assert": true,
-    "policy_id": "SEC-001",
-    "duration_days": 90
+    "decision_requested": "ACCEPT",
+    "justification": "Exception granted for legacy system integration. Compensating controls in place. Review scheduled for 90 days."
   },
   "injected_time_utc": "2024-01-15T14:00:00Z"
 }
@@ -93,8 +121,6 @@ VeraSeal enforces strict JSON input for critical reasons:
 
 4. **Legal Standing**: When decisions need to stand up to legal scrutiny, there can be no room for "the system interpreted my input differently than I intended."
 
-**The UI builder is a deterministic transform** — it takes explicit form fields and converts them 1:1 to the JSON schema. No interpretation, no guessing, no natural language parsing.
-
 ## API Endpoints
 
 | Method | Path | Description |
@@ -102,6 +128,7 @@ VeraSeal enforces strict JSON input for critical reasons:
 | GET | / | Web UI with JSON builder |
 | POST | /evaluate | Submit evaluation request |
 | GET | /evaluations/{id} | View evaluation details |
+| GET | /evaluations/{id}/output | Get output.json |
 | GET | /evaluations/{id}/bundle | Download ZIP bundle |
 | POST | /replay/{id} | Verify replay determinism |
 | GET | /replay/{id} | View replay result |
@@ -111,21 +138,14 @@ VeraSeal enforces strict JSON input for critical reasons:
 | GET | /examples | Canonical example payloads |
 | GET | /system-check | System self-test page |
 
-## MVP Rule
-
-The current evaluation rule is minimal:
-- IF `payload.assert === true` → **ACCEPT**
-- Otherwise → **REJECT**
-
-This is a placeholder rule for end-to-end validation. Production systems would implement domain-specific rules.
-
 ## Key Properties
 
 - **Determinism**: Same input always produces same output (TZ=UTC, no randomness, no system clock)
-- **Append-only**: Artifacts cannot be overwritten or modified
+- **Append-only**: Artifacts cannot be overwritten or modified (409 on collision)
 - **Provenance**: All artifacts are hashed with SHA-256 and manifested
 - **Replay**: Any evaluation can be re-run and verified at any time
 - **Strict Schemas**: Pydantic with `extra="forbid"` — no unknown fields allowed
+- **Fail-Closed**: Missing or invalid fields always result in REJECT
 
 ## Running the Server
 
@@ -148,6 +168,7 @@ pytest tests/ -v
 - API endpoints (all routes, error handling)
 - Schema validation (Pydantic strict mode)
 - Invariant checks (pre/during/post)
+- Fail-closed behavior (missing fields, invalid values)
 
 ## Verification Script
 
@@ -158,10 +179,11 @@ python tools/verify_published.py http://localhost:5000
 ```
 
 This script verifies:
-- Health endpoint accessibility
-- Version and schema endpoints
-- Evaluation submission and replay
-- Deterministic hash computation
+- Health, version, schema, examples endpoints
+- Evaluation submission with policy v1
+- Fail-closed behavior for missing/invalid fields
+- Replay determinism
+- Policy ID in results
 
 ## Project Structure
 
@@ -170,6 +192,9 @@ app/
 ├── main.py              # Entry point (port 5000)
 ├── api/routes.py        # FastAPI routes
 ├── core/engine.py       # Deterministic evaluation engine
+├── policy/              # Evaluation policy definitions
+│   ├── __init__.py      # Policy loading and evaluation
+│   └── evaluation_policy_v1.json
 ├── schemas/             # Pydantic v2 schemas
 ├── invariants/          # Pre/during/post checks
 ├── audit/store.py       # Filesystem artifact storage
@@ -193,19 +218,23 @@ docs/
 └── VERASEAL_COMPLETE_DOCUMENTATION.md
 ```
 
-## What Changed (January 2026)
+## Replay Compatibility
 
-### New Features
-- **JSON Builder UI**: Guided form with templates (Vendor Approval, Policy Exception, Risk Acceptance, Access Approval)
-- **Copy Buttons**: Copy JSON, minified JSON, or cURL command with one click
-- **/version endpoint**: Returns version and git commit hash
-- **/schema endpoint**: Returns authoritative JSON schema
-- **/examples endpoint**: Returns canonical example payloads
-- **Improved Error Messages**: Validation errors now include field, message, type, and suggested fix
-- **Verification Script**: `tools/verify_published.py` for end-to-end deployment testing
+VeraSeal supports replay for both new and legacy evaluations:
 
-### Improvements
-- Enhanced test suite (240+ tests, 8.8x increase from original 26)
-- Better validation error formatting with hints
-- UI links to schema, examples, and version endpoints
-- Documentation updated for compliance/audit audience
+- **New evaluations** (policy_id: evaluation-policy-v1): Use the new policy-based evaluation
+- **Legacy evaluations** (missing policy_id): Automatically use legacy MVP rule for replay
+
+This ensures all historical artifacts remain verifiable.
+
+## Changes from MVP
+
+The original MVP used a placeholder rule (`payload.assert == true`). This has been replaced with:
+
+- **evaluation-policy-v1**: A real, deterministic policy with required fields
+- **decision_requested**: Explicit "ACCEPT" or "REJECT" value
+- **justification**: Mandatory explanation for every decision
+- **Fail-closed**: Any rule failure results in REJECT
+- **policy_id in results**: Every evaluation records which policy was used
+
+Legacy artifacts that used the placeholder rule remain replayable through automatic compatibility mode.

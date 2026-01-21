@@ -128,6 +128,7 @@ class EvaluationResult(BaseModel):
     input_sha256: str
     output_sha256: str
     manifest_sha256: str
+    policy_id: str
     decision: str
     reasons: List[str]
     trace: List[TraceStep]

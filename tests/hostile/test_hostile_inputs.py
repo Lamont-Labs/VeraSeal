@@ -19,7 +19,7 @@ VALID_REQUEST = {
     "version": "v1",
     "subject": "test-subject",
     "ruleset": "test-ruleset",
-    "payload": {"assert": True},
+    "payload": {"decision_requested": "ACCEPT", "justification": "Test justification for evaluation"},
     "injected_time_utc": "2024-01-01T00:00:00Z",
 }
 
@@ -139,7 +139,7 @@ class TestReplayMismatch:
             "version": "v1",
             "subject": "replay-tamper-test",
             "ruleset": "tamper-test",
-            "payload": {"assert": True, "test_id": "tamper_test_001"},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Tamper test evaluation", "test_id": "tamper_test_001"},
             "injected_time_utc": "2024-06-15T12:00:00Z",
         }
         

@@ -16,7 +16,7 @@ VALID_REQUEST = {
     "version": "v1",
     "subject": "api-test",
     "ruleset": "api-rules",
-    "payload": {"assert": True},
+    "payload": {"decision_requested": "ACCEPT", "justification": "API endpoint test evaluation"},
     "injected_time_utc": "2024-01-01T00:00:00Z",
 }
 

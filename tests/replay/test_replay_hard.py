@@ -32,7 +32,7 @@ class TestReplayTamperDetection:
             "version": "v1",
             "subject": f"replay-hard-test-{unique_suffix}",
             "ruleset": "hard-test",
-            "payload": {"assert": True, "unique": f"hard_{unique_suffix}"},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Hard replay test", "unique": f"hard_{unique_suffix}"},
             "injected_time_utc": "2024-08-01T00:00:00Z",
         }
         response = client.post("/evaluate", json=request)

@@ -215,6 +215,7 @@ class TestEvaluationResultSchema:
             reasons=["test reason"],
             trace=[],
             created_time_utc="2024-01-01T00:00:00Z",
+            policy_id="evaluation-policy-v1",
         )
         assert result.decision == "ACCEPT"
     
@@ -280,6 +281,7 @@ class TestEvaluationResultSchema:
             reasons=["test"],
             trace=[],
             created_time_utc="2024-01-01T00:00:00Z",
+            policy_id="evaluation-policy-v1",
         )
         assert result.manifest_sha256 == ""
 

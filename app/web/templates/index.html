@@ -131,22 +131,28 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Decision Condition <span class="required">*</span></label>
+                    <label>Decision Requested <span class="required">*</span></label>
                     <div class="radio-group">
                         <label class="radio-label">
-                            <input type="radio" name="assert" value="true" checked>
-                            <span>Approve (assert = true)</span>
+                            <input type="radio" name="decision_requested" value="ACCEPT" checked>
+                            <span>ACCEPT</span>
                         </label>
                         <label class="radio-label">
-                            <input type="radio" name="assert" value="false">
-                            <span>Reject (assert = false)</span>
+                            <input type="radio" name="decision_requested" value="REJECT">
+                            <span>REJECT</span>
                         </label>
                     </div>
-                    <span class="helper-text">The decision outcome. ACCEPT if true, REJECT if false.</span>
+                    <span class="helper-text">The decision being recorded.</span>
                 </div>
 
                 <div class="form-group">
-                    <label>Decision Context</label>
+                    <label for="justification">Justification <span class="required">*</span></label>
+                    <textarea id="justification" name="justification" required rows="3" placeholder="e.g., Vendor passed due diligence review. NDA signed. SOC2 certified."></textarea>
+                    <span class="helper-text">Mandatory explanation for the decision. This is part of the permanent record.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Additional Context (optional)</label>
                     <div id="contextFields" class="context-fields">
                         <div class="context-row">
                             <input type="text" class="context-key" placeholder="Field name">
@@ -237,7 +243,8 @@
             document.getElementById('subject').addEventListener('input', updateGeneratedJson);
             document.getElementById('ruleset').addEventListener('input', updateGeneratedJson);
             document.getElementById('timestamp').addEventListener('input', updateGeneratedJson);
-            document.querySelectorAll('input[name="assert"]').forEach(r => r.addEventListener('change', updateGeneratedJson));
+            document.querySelectorAll('input[name="decision_requested"]').forEach(r => r.addEventListener('change', updateGeneratedJson));
+            document.getElementById('justification').addEventListener('input', updateGeneratedJson);
         }
 
         function incrementCounter(name) {
@@ -274,24 +281,29 @@
             if (type === 'vendor') {
                 document.getElementById('subject').value = 'vendor-approval';
                 document.getElementById('ruleset').value = 'vendor-onboarding-policy';
+                document.getElementById('justification').value = 'Vendor passed due diligence review. NDA signed. SOC2 certified.';
                 addContextFieldWithValues('vendor_name', '');
                 addContextFieldWithValues('country', '');
-                addContextFieldWithValues('requires_nda', 'true');
+                addContextFieldWithValues('soc2_certified', 'true');
             } else if (type === 'policy') {
                 document.getElementById('subject').value = 'policy-exception';
                 document.getElementById('ruleset').value = 'exception-review';
-                addContextFieldWithValues('policy_id', '');
-                addContextFieldWithValues('exception_reason', '');
-                addContextFieldWithValues('duration_days', '');
+                document.getElementById('justification').value = 'Exception granted for legacy system integration. Compensating controls in place.';
+                addContextFieldWithValues('policy_ref', '');
+                addContextFieldWithValues('exception_duration_days', '');
+                addContextFieldWithValues('approver', '');
             } else if (type === 'risk') {
                 document.getElementById('subject').value = 'risk-acceptance';
                 document.getElementById('ruleset').value = 'risk-assessment';
+                document.querySelector('input[name="decision_requested"][value="REJECT"]').checked = true;
+                document.getElementById('justification').value = 'Risk rejected due to insufficient mitigation controls.';
                 addContextFieldWithValues('risk_id', '');
                 addContextFieldWithValues('risk_level', '');
-                addContextFieldWithValues('mitigation', '');
+                addContextFieldWithValues('residual_risk_score', '');
             } else if (type === 'access') {
                 document.getElementById('subject').value = 'access-approval';
                 document.getElementById('ruleset').value = 'access-control';
+                document.getElementById('justification').value = 'Access granted for incident investigation. Access expires on specified date.';
                 addContextFieldWithValues('resource', '');
                 addContextFieldWithValues('access_level', '');
                 addContextFieldWithValues('requestor', '');
@@ -303,7 +315,8 @@
             document.getElementById('subject').value = '';
             document.getElementById('ruleset').value = '';
             setDefaultTimestamp();
-            document.querySelector('input[name="assert"][value="true"]').checked = true;
+            document.querySelector('input[name="decision_requested"][value="ACCEPT"]').checked = true;
+            document.getElementById('justification').value = '';
             document.getElementById('contextFields').innerHTML = `
                 <div class="context-row">
                     <input type="text" class="context-key" placeholder="Field name">
@@ -368,8 +381,9 @@
         }
 
         function buildPayload() {
-            const assertValue = document.querySelector('input[name="assert"]:checked').value === 'true';
-            const payload = { assert: assertValue };
+            const decisionRequested = document.querySelector('input[name="decision_requested"]:checked').value;
+            const justification = document.getElementById('justification').value.trim();
+            const payload = { decision_requested: decisionRequested, justification: justification };
             document.querySelectorAll('.context-row').forEach(row => {
                 const key = row.querySelector('.context-key').value.trim();
                 const val = row.querySelector('.context-value').value.trim();

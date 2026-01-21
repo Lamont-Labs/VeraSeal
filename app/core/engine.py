@@ -16,9 +16,17 @@ from app.invariants.checks import (
     check_during_invariants,
     check_post_invariants,
 )
+from app.policy import (
+    load_policy,
+    get_default_policy_id,
+    evaluate_with_policy,
+)
 
 
-def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
+def run_evaluation(
+    request: EvaluationRequest,
+    policy_id: str | None = None
+) -> Tuple[EvaluationResult, str]:
     """Run deterministic evaluation on request.
     
     Returns (EvaluationResult, input_sha256).
@@ -27,8 +35,23 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
     - No randomness
     - No system clock reads
     - Deterministic output for identical input
+    
+    Args:
+        request: The evaluation request
+        policy_id: Optional policy ID override (for replay compatibility)
     """
     trace_steps: List[TraceStep] = []
+    
+    if policy_id is None:
+        policy_id = get_default_policy_id()
+    
+    policy = load_policy(policy_id)
+    
+    trace_steps.append(TraceStep(
+        step_name="load_policy",
+        status="PASS",
+        details=f"Loaded policy: {policy_id}"
+    ))
     
     pre_checks = check_pre_invariants(request)
     for check_name, status in pre_checks:
@@ -64,28 +87,25 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
             details=f"DURING invariant check: {check_name}"
         ))
     
-    decision, reasons = _evaluate_mvp_rule(request.payload)
+    decision, reasons, rule_trace = evaluate_with_policy(policy, request.payload)
+    
+    for rt in rule_trace:
+        trace_steps.append(TraceStep(
+            step_name=f"rule_{rt['rule_id']}_{rt['rule_name']}",
+            status=rt["status"],
+            details=rt["detail"]
+        ))
     
     trace_steps.append(TraceStep(
-        step_name="mvp_rule_evaluation",
+        step_name="policy_evaluation_complete",
         status="PASS",
-        details=f"MVP rule applied: decision={decision}, reasons={reasons}"
+        details=f"Policy {policy_id} applied: decision={decision}, reasons_count={len(reasons)}"
     ))
-    
-    partial_result = {
-        "evaluation_id": evaluation_id,
-        "input_sha256": input_sha256,
-        "output_sha256": "",
-        "manifest_sha256": "",
-        "decision": decision,
-        "reasons": reasons,
-        "trace": [s.model_dump() for s in trace_steps],
-        "created_time_utc": request.injected_time_utc,
-    }
     
     output_for_hash = {
         "evaluation_id": evaluation_id,
         "input_sha256": input_sha256,
+        "policy_id": policy_id,
         "decision": decision,
         "reasons": reasons,
         "trace": [s.model_dump() for s in trace_steps],
@@ -93,8 +113,6 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
     }
     output_canonical = canonicalize_json(output_for_hash)
     output_sha256 = compute_sha256(output_canonical)
-    
-    partial_result["output_sha256"] = output_sha256
     
     trace_steps.append(TraceStep(
         step_name="compute_output_hash",
@@ -107,6 +125,7 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
         input_sha256=input_sha256,
         output_sha256=output_sha256,
         manifest_sha256="",
+        policy_id=policy_id,
         decision=decision,
         reasons=reasons,
         trace=trace_steps,
@@ -126,6 +145,7 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
         input_sha256=input_sha256,
         output_sha256=output_sha256,
         manifest_sha256="",
+        policy_id=policy_id,
         decision=decision,
         reasons=reasons,
         trace=trace_steps,
@@ -133,23 +153,6 @@ def run_evaluation(request: EvaluationRequest) -> Tuple[EvaluationResult, str]:
     )
     
     return final_result, input_sha256
-
-
-def _evaluate_mvp_rule(payload: Dict[str, Any]) -> Tuple[str, List[str]]:
-    """MVP evaluation rule (minimal deterministic rule).
-    
-    Rule: IF payload contains key "assert" with value true -> ACCEPT else REJECT
-    
-    This is NOT a product decision; it is a placeholder minimal rule required
-    to make the system executable end-to-end.
-    """
-    if payload.get("assert") is True:
-        return "ACCEPT", ["MVP rule: payload.assert == true"]
-    else:
-        if "assert" not in payload:
-            return "REJECT", ["MVP rule: payload.assert key not present"]
-        else:
-            return "REJECT", [f"MVP rule: payload.assert == {payload.get('assert')} (not true)"]
 
 
 def run_pure_evaluation(request: EvaluationRequest) -> Tuple[str, str, str]:

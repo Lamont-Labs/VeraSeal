@@ -29,7 +29,7 @@ class TestReplayIntegrity:
             "version": "v1",
             "subject": "replay-valid-test",
             "ruleset": "valid-test",
-            "payload": {"assert": True, "unique": "replay_valid_001"},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Valid replay test", "unique": "replay_valid_001"},
             "injected_time_utc": "2024-07-01T00:00:00Z",
         }
         
@@ -61,7 +61,7 @@ class TestReplayIntegrity:
             "version": "v1",
             "subject": "replay-decision-test",
             "ruleset": "decision-test",
-            "payload": {"assert": True, "unique": "decision_tamper_001"},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Decision tamper test", "unique": "decision_tamper_001"},
             "injected_time_utc": "2024-07-02T00:00:00Z",
         }
         
@@ -101,7 +101,7 @@ class TestAppendOnlyPolicy:
             "version": "v1",
             "subject": "append-only-test",
             "ruleset": "append-test",
-            "payload": {"assert": True, "unique": "append_only_001"},
+            "payload": {"decision_requested": "ACCEPT", "justification": "Append-only policy test", "unique": "append_only_001"},
             "injected_time_utc": "2024-07-03T00:00:00Z",
         }
         

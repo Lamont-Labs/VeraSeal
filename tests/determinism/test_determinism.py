@@ -17,7 +17,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="determinism-test",
             ruleset="test-rules",
-            payload={"assert": True, "data": "test"},
+            payload={"decision_requested": "ACCEPT", "justification": "Test data for determinism check"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -34,7 +34,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="test-1",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "First test request"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -42,7 +42,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="test-2",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Second test request"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -53,38 +53,77 @@ class TestEngineDeterminism:
         assert eval_id1 != eval_id2
     
     def test_accept_decision(self):
-        """Payload with assert=true must produce ACCEPT."""
+        """Payload with decision_requested=ACCEPT must produce ACCEPT."""
         request = EvaluationRequest(
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Valid approval justification"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
         result, _ = run_evaluation(request)
         assert result.decision == "ACCEPT"
     
-    def test_reject_decision_missing_assert(self):
-        """Payload without assert must produce REJECT."""
+    def test_reject_decision_missing_decision_requested(self):
+        """Payload without decision_requested must produce REJECT."""
         request = EvaluationRequest(
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"other": "data"},
+            payload={"justification": "Missing decision_requested field"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
         result, _ = run_evaluation(request)
         assert result.decision == "REJECT"
     
-    def test_reject_decision_assert_false(self):
-        """Payload with assert=false must produce REJECT."""
+    def test_reject_decision_requested_reject(self):
+        """Payload with decision_requested=REJECT must produce REJECT."""
         request = EvaluationRequest(
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": False},
+            payload={"decision_requested": "REJECT", "justification": "Explicitly rejected"},
+            injected_time_utc="2024-01-01T00:00:00Z",
+        )
+        
+        result, _ = run_evaluation(request)
+        assert result.decision == "REJECT"
+    
+    def test_reject_missing_justification(self):
+        """Payload without justification must produce REJECT."""
+        request = EvaluationRequest(
+            version="v1",
+            subject="test",
+            ruleset="rules",
+            payload={"decision_requested": "ACCEPT"},
+            injected_time_utc="2024-01-01T00:00:00Z",
+        )
+        
+        result, _ = run_evaluation(request)
+        assert result.decision == "REJECT"
+    
+    def test_reject_empty_justification(self):
+        """Payload with empty justification must produce REJECT."""
+        request = EvaluationRequest(
+            version="v1",
+            subject="test",
+            ruleset="rules",
+            payload={"decision_requested": "ACCEPT", "justification": ""},
+            injected_time_utc="2024-01-01T00:00:00Z",
+        )
+        
+        result, _ = run_evaluation(request)
+        assert result.decision == "REJECT"
+    
+    def test_reject_invalid_decision_requested(self):
+        """Payload with invalid decision_requested must produce REJECT."""
+        request = EvaluationRequest(
+            version="v1",
+            subject="test",
+            ruleset="rules",
+            payload={"decision_requested": "MAYBE", "justification": "Invalid decision value"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -97,7 +136,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "ID derivation test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -111,7 +150,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Time validation test"},
             injected_time_utc=injected,
         )
         
@@ -124,7 +163,7 @@ class TestEngineDeterminism:
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Hash format test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
@@ -141,9 +180,22 @@ class TestEngineDeterminism:
             version="v1",
             subject="test",
             ruleset="rules",
-            payload={"assert": True},
+            payload={"decision_requested": "ACCEPT", "justification": "Reasons validation test"},
             injected_time_utc="2024-01-01T00:00:00Z",
         )
         
         result, _ = run_evaluation(request)
         assert len(result.reasons) > 0
+    
+    def test_policy_id_in_result(self):
+        """Result must include policy_id."""
+        request = EvaluationRequest(
+            version="v1",
+            subject="test",
+            ruleset="rules",
+            payload={"decision_requested": "ACCEPT", "justification": "Policy ID test"},
+            injected_time_utc="2024-01-01T00:00:00Z",
+        )
+        
+        result, _ = run_evaluation(request)
+        assert result.policy_id == "evaluation-policy-v1"

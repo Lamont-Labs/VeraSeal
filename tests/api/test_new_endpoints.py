@@ -55,10 +55,12 @@ class TestSchemaEndpoint:
         data = response.json()
         assert "response" in data
     
-    def test_schema_has_mvp_rule(self):
+    def test_schema_has_evaluation_rules(self):
         response = client.get("/schema")
         data = response.json()
-        assert "mvp_rule" in data
+        assert "evaluation_rules" in data
+        assert "fail_closed" in data
+        assert data["fail_closed"] is True
     
     def test_schema_request_has_required_fields(self):
         response = client.get("/schema")

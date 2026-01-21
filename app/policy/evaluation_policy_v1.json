@@ -1,0 +1,56 @@
+{
+  "policy_id": "evaluation-policy-v1",
+  "policy_version": "1.0.0",
+  "description": "Deterministic decision evaluation policy for compliance, audit, legal, and governance decisions",
+  "required_fields": [
+    "payload.decision_requested",
+    "payload.justification"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "R001",
+      "rule_name": "check_decision_requested_present",
+      "description": "decision_requested field must be present in payload",
+      "check": "payload.decision_requested exists",
+      "fail_action": "REJECT",
+      "fail_code": "MISSING_DECISION_REQUESTED",
+      "fail_message": "Required field 'decision_requested' is missing from payload"
+    },
+    {
+      "rule_id": "R002",
+      "rule_name": "check_decision_requested_valid",
+      "description": "decision_requested must be exactly 'ACCEPT' or 'REJECT'",
+      "check": "payload.decision_requested in ['ACCEPT', 'REJECT']",
+      "fail_action": "REJECT",
+      "fail_code": "INVALID_DECISION_REQUESTED",
+      "fail_message": "Field 'decision_requested' must be exactly 'ACCEPT' or 'REJECT'"
+    },
+    {
+      "rule_id": "R003",
+      "rule_name": "check_justification_present",
+      "description": "justification field must be present in payload",
+      "check": "payload.justification exists",
+      "fail_action": "REJECT",
+      "fail_code": "MISSING_JUSTIFICATION",
+      "fail_message": "Required field 'justification' is missing from payload"
+    },
+    {
+      "rule_id": "R004",
+      "rule_name": "check_justification_non_empty",
+      "description": "justification must be a non-empty string",
+      "check": "payload.justification is non-empty string",
+      "fail_action": "REJECT",
+      "fail_code": "EMPTY_JUSTIFICATION",
+      "fail_message": "Field 'justification' must be a non-empty string"
+    },
+    {
+      "rule_id": "R005",
+      "rule_name": "apply_decision",
+      "description": "Record the requested decision with justification",
+      "check": "always passes if prior rules pass",
+      "pass_action": "return payload.decision_requested as decision"
+    }
+  ],
+  "fail_closed": true,
+  "notes": "This policy records decisions with mandatory justification. The decision_requested field explicitly states the intended outcome, and justification provides the audit trail. All decisions are final and immutable once recorded."
+}

@@ -296,6 +296,7 @@ async def version():
 async def schema():
     """Return the authoritative JSON schema for evaluation requests."""
     schema_data = {
+        "policy_id": "evaluation-policy-v1",
         "request": {
             "type": "object",
             "required": ["version", "subject", "ruleset", "payload", "injected_time_utc"],
@@ -320,7 +321,21 @@ async def schema():
                 },
                 "payload": {
                     "type": "object",
-                    "description": "Decision data. Must contain 'assert': true for ACCEPT, any other value for REJECT"
+                    "required": ["decision_requested", "justification"],
+                    "description": "Decision data with required fields",
+                    "properties": {
+                        "decision_requested": {
+                            "type": "string",
+                            "enum": ["ACCEPT", "REJECT"],
+                            "description": "The decision being recorded. Must be exactly 'ACCEPT' or 'REJECT'."
+                        },
+                        "justification": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Mandatory explanation for the decision. Must be non-empty."
+                        }
+                    },
+                    "additionalProperties": True
                 },
                 "injected_time_utc": {
                     "type": "string",
@@ -340,6 +355,7 @@ async def schema():
                         "input_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
                         "output_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
                         "manifest_sha256": {"type": "string"},
+                        "policy_id": {"type": "string", "description": "Policy used for evaluation"},
                         "decision": {"type": "string", "enum": ["ACCEPT", "REJECT"]},
                         "reasons": {"type": "array", "items": {"type": "string"}},
                         "trace": {"type": "array"},
@@ -348,7 +364,15 @@ async def schema():
                 }
             }
         },
-        "mvp_rule": "IF payload.assert === true THEN ACCEPT ELSE REJECT"
+        "evaluation_rules": [
+            {"rule_id": "R001", "description": "decision_requested field must be present"},
+            {"rule_id": "R002", "description": "decision_requested must be 'ACCEPT' or 'REJECT'"},
+            {"rule_id": "R003", "description": "justification field must be present"},
+            {"rule_id": "R004", "description": "justification must be a non-empty string"},
+            {"rule_id": "R005", "description": "Record decision with justification"}
+        ],
+        "fail_closed": True,
+        "notes": "Any rule failure results in REJECT. Decisions are immutable once recorded."
     }
     return JSONResponse(content=schema_data)
 
@@ -358,64 +382,69 @@ async def examples():
     """Return canonical example payloads for common use cases."""
     example_data = {
         "vendor_approval": {
-            "description": "Approve a new vendor for onboarding",
+            "description": "Record approval of a new vendor for onboarding",
             "request": {
                 "version": "v1",
                 "subject": "vendor-approval",
                 "ruleset": "vendor-onboarding-policy",
                 "payload": {
-                    "assert": True,
+                    "decision_requested": "ACCEPT",
+                    "justification": "Vendor Acme Corp passed due diligence review. NDA signed 2024-01-10. SOC2 Type II certified.",
                     "vendor_name": "Acme Corp",
                     "country": "US",
-                    "requires_nda": True
+                    "soc2_certified": True
                 },
                 "injected_time_utc": "2024-01-15T10:30:00Z"
             },
             "expected_decision": "ACCEPT"
         },
         "policy_exception": {
-            "description": "Request exception to standard policy",
+            "description": "Record a policy exception grant",
             "request": {
                 "version": "v1",
                 "subject": "policy-exception",
                 "ruleset": "exception-review",
                 "payload": {
-                    "assert": True,
-                    "policy_id": "SEC-001",
-                    "exception_reason": "Legacy system integration",
-                    "duration_days": 90
+                    "decision_requested": "ACCEPT",
+                    "justification": "Exception granted for legacy system integration. Compensating controls in place. Review scheduled for 90 days.",
+                    "policy_ref": "SEC-001",
+                    "exception_duration_days": 90,
+                    "approver": "ciso@example.com"
                 },
                 "injected_time_utc": "2024-01-15T14:00:00Z"
             },
             "expected_decision": "ACCEPT"
         },
         "risk_rejection": {
-            "description": "Reject a high-risk proposal",
+            "description": "Record rejection of a high-risk proposal",
             "request": {
                 "version": "v1",
                 "subject": "risk-acceptance",
                 "ruleset": "risk-assessment",
                 "payload": {
-                    "assert": False,
+                    "decision_requested": "REJECT",
+                    "justification": "Risk RISK-2024-001 rejected due to insufficient mitigation controls. Residual risk exceeds acceptable threshold.",
                     "risk_id": "RISK-2024-001",
                     "risk_level": "high",
-                    "reason": "Insufficient mitigation controls"
+                    "residual_risk_score": 8.5
                 },
                 "injected_time_utc": "2024-01-15T16:00:00Z"
             },
             "expected_decision": "REJECT"
         },
         "access_approval": {
-            "description": "Approve access request",
+            "description": "Record approval of an access request",
             "request": {
                 "version": "v1",
                 "subject": "access-approval",
                 "ruleset": "access-control",
                 "payload": {
-                    "assert": True,
+                    "decision_requested": "ACCEPT",
+                    "justification": "Read-only access to production database granted for incident investigation. Access expires 2024-01-22.",
                     "resource": "production-database",
                     "access_level": "read-only",
-                    "requestor": "user@example.com"
+                    "requestor": "user@example.com",
+                    "expires": "2024-01-22T09:00:00Z"
                 },
                 "injected_time_utc": "2024-01-15T09:00:00Z"
             },
